@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>2D Shooter with AI Enemies</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #232946 0%, #16161a 100%);
+      color: #f4f4f8;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    #info {
+      text-align: center;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      background: rgba(30, 41, 59, 0.85);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+      padding: 18px 36px 12px 36px;
+      border: 1.5px solid #2ec4b6;
+      max-width: 520px;
+    }
+
+    #info h2 {
+      margin: 0 0 8px 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #2ec4b6;
+      text-shadow: 0 2px 8px #111a;
+    }
+
+    #info div {
+      font-size: 1.1rem;
+      color: #f7b801;
+      text-shadow: 0 1px 4px #000a;
+    }
+
+    #gameCanvas {
+      background: linear-gradient(135deg, #232946 60%, #16161a 100%);
+      display: block;
+      margin: 24px auto 0 auto;
+      border: 3px solid #2ec4b6;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px 0 #000a, 0 1.5px 0 #2ec4b6;
+      transition: box-shadow 0.2s;
+    }
+
+    #gameCanvas:focus {
+      outline: 2px solid #f7b801;
+      box-shadow: 0 0 0 4px #f7b80155, 0 8px 32px 0 #000a;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="info">
+    <h2>2D Shooter Game (WASD move, Mouse aim, Click to shoot)</h2>
+    <div>Survive as long as you can against AI enemies!</div>
+  </div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game Settings
+    const PLAYER_RADIUS = 18;
+    const PLAYER_SPEED = 3.5;
+    const BULLET_SPEED = 8;
+    const BULLET_RADIUS = 6;
+    const ENEMY_RADIUS = 16;
+    const ENEMY_SPEED = 1.7;
+    const ENEMY_SPAWN_INTERVAL = 1200; // ms
+    const ENEMY_BULLET_SPEED = 4.5;
+    const ENEMY_SHOOT_INTERVAL = 1600;
+
+    // Game State
+    let player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      angle: 0,
+      hp: 5,
+      score: 0
+    };
+    let keys = {};
+    let mouse = { x: player.x, y: player.y };
+    let bullets = [];
+    let enemies = [];
+    let enemyBullets = [];
+    let lastEnemySpawn = 0;
+    let gameOver = false;
+
+    // Controls
+    document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mousedown', e => {
+      if (!gameOver) shootBullet();
+      else location.reload();
+    });
+
+    function shootBullet() {
+      const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+      bullets.push({
+        x: player.x + Math.cos(angle) * PLAYER_RADIUS,
+        y: player.y + Math.sin(angle) * PLAYER_RADIUS,
+        dx: Math.cos(angle) * BULLET_SPEED,
+        dy: Math.sin(angle) * BULLET_SPEED
+      });
+    }
+
+    function shootEnemyBullet(enemy) {
+      const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+      enemyBullets.push({
+        x: enemy.x + Math.cos(angle) * ENEMY_RADIUS,
+        y: enemy.y + Math.sin(angle) * ENEMY_RADIUS,
+        dx: Math.cos(angle) * ENEMY_BULLET_SPEED,
+        dy: Math.sin(angle) * ENEMY_BULLET_SPEED
+      });
+    }
+
+    function spawnEnemy() {
+      // Spawn at random edge
+      let edge = Math.floor(Math.random() * 4);
+      let x, y;
+      if (edge === 0) { // top
+        x = Math.random() * canvas.width;
+        y = -ENEMY_RADIUS;
+      } else if (edge === 1) { // right
+        x = canvas.width + ENEMY_RADIUS;
+        y = Math.random() * canvas.height;
+      } else if (edge === 2) { // bottom
+        x = Math.random() * canvas.width;
+        y = canvas.height + ENEMY_RADIUS;
+      } else { // left
+        x = -ENEMY_RADIUS;
+        y = Math.random() * canvas.height;
+      }
+      enemies.push({
+        x, y,
+        shootTimer: ENEMY_SHOOT_INTERVAL * Math.random()
+      });
+    }
+
+    function updatePlayer() {
+      if (keys['w']) player.y -= PLAYER_SPEED;
+      if (keys['s']) player.y += PLAYER_SPEED;
+      if (keys['a']) player.x -= PLAYER_SPEED;
+      if (keys['d']) player.x += PLAYER_SPEED;
+      // Clamp to canvas
+      player.x = Math.max(PLAYER_RADIUS, Math.min(canvas.width - PLAYER_RADIUS, player.x));
+      player.y = Math.max(PLAYER_RADIUS, Math.min(canvas.height - PLAYER_RADIUS, player.y));
+    }
+
+    function updateBullets() {
+      bullets.forEach(b => {
+        b.x += b.dx;
+        b.y += b.dy;
+      });
+      // Remove off-screen bullets
+      for (let i = bullets.length - 1; i >= 0; i--)
+        if (bullets[i].x < -20 || bullets[i].x > canvas.width + 20 ||
+          bullets[i].y < -20 || bullets[i].y > canvas.height + 20)
+          bullets.splice(i, 1);
+    }
+
+    function updateEnemyBullets() {
+      enemyBullets.forEach(b => {
+        b.x += b.dx;
+        b.y += b.dy;
+      });
+      for (let i = enemyBullets.length - 1; i >= 0; i--)
+        if (enemyBullets[i].x < -30 || enemyBullets[i].x > canvas.width + 30 ||
+          enemyBullets[i].y < -30 || enemyBullets[i].y > canvas.height + 30)
+          enemyBullets.splice(i, 1);
+    }
+
+    function updateEnemies(dt) {
+      for (let e of enemies) {
+        // Move toward player (simple AI)
+        const dx = player.x - e.x, dy = player.y - e.y;
+        const dist = Math.hypot(dx, dy);
+        e.x += (dx / dist) * ENEMY_SPEED;
+        e.y += (dy / dist) * ENEMY_SPEED;
+        e.shootTimer -= dt;
+        if (e.shootTimer <= 0) {
+          shootEnemyBullet(e);
+          e.shootTimer = ENEMY_SHOOT_INTERVAL + Math.random() * 500;
+        }
+      }
+    }
+
+    function handleCollisions() {
+      // Player hit by enemy
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (Math.hypot(player.x - e.x, player.y - e.y) < PLAYER_RADIUS + ENEMY_RADIUS) {
+          player.hp--;
+          enemies.splice(i, 1);
+          if (player.hp <= 0) gameOver = true;
+        }
+      }
+      // Player hit by enemy bullet
+      for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const b = enemyBullets[i];
+        if (Math.hypot(player.x - b.x, player.y - b.y) < PLAYER_RADIUS + BULLET_RADIUS) {
+          player.hp--;
+          enemyBullets.splice(i, 1);
+          if (player.hp <= 0) gameOver = true;
+        }
+      }
+      // Bullets hit enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          const e = enemies[i], b = bullets[j];
+          if (Math.hypot(e.x - b.x, e.y - b.y) < ENEMY_RADIUS + BULLET_RADIUS) {
+            enemies.splice(i, 1); bullets.splice(j, 1);
+            player.score++;
+            break;
+          }
+        }
+      }
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(Math.atan2(mouse.y - player.y, mouse.x - player.x));
+      ctx.beginPath();
+      ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = '#2ec4b6';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(PLAYER_RADIUS / 2, 0, PLAYER_RADIUS / 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "#f7b801";
+      for (let b of bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawEnemies() {
+      for (let e of enemies) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, ENEMY_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = "#e71d36";
+        ctx.fill();
+        // Eyes
+        ctx.beginPath();
+        ctx.arc(-ENEMY_RADIUS / 4, -ENEMY_RADIUS / 4, 3, 0, Math.PI * 2);
+        ctx.arc(ENEMY_RADIUS / 4, -ENEMY_RADIUS / 4, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawEnemyBullets() {
+      ctx.fillStyle = "#ff6f59";
+      for (let b of enemyBullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawHud() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "20px Arial";
+      ctx.fillText("HP: " + player.hp, 16, 30);
+      ctx.fillText("Score: " + player.score, canvas.width - 120, 30);
+      if (gameOver) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "48px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = "24px Arial";
+        ctx.fillText("Click to restart", canvas.width / 2, canvas.height / 2 + 25);
+        ctx.textAlign = "left";
+      }
+    }
+
+    let lastTime = performance.now();
+    function gameLoop(now) {
+      const dt = now - lastTime;
+      lastTime = now;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!gameOver) {
+        updatePlayer();
+        updateBullets();
+        updateEnemyBullets();
+        updateEnemies(dt);
+        handleCollisions();
+
+        if (now - lastEnemySpawn > ENEMY_SPAWN_INTERVAL) {
+          spawnEnemy();
+          lastEnemySpawn = now;
+        }
+      }
+
+      drawPlayer();
+      drawBullets();
+      drawEnemies();
+      drawEnemyBullets();
+      drawHud();
+
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+
+</html>
