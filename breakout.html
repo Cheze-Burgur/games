@@ -240,11 +240,11 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="logo">▶ WEB BREAKOUT</div>
+      <div class="logo">> Breakout!</div>
       <div class="hud">
         <div class="pill">SCORE: <span id="score">000000</span></div>
         <div class="pill">HI: <span id="hiScore">000000</span></div>
-        <div class="pill">LIVES: <span id="lives">3</span></div>
+        <div class="pill">BALLS: <span id="lives">5</span></div>
         <div class="pill">LEVEL: <span id="level">1</span></div>
         <div class="pill">FPS: <span id="fps">60</span></div>
       </div>
@@ -291,7 +291,7 @@
 
             <div class="opt" style="font-family:'VT323', monospace; font-size: 22px; line-height:1.35;">
               Controls: Move with ← → or mouse. Tap Space to launch the ball. Press P or Esc to pause. Destroy all
-              bricks to clear the level. You have 3 lives — good luck!
+              bricks to clear the level. You have 5 lives — good luck!
             </div>
           </div>
         </div>
@@ -420,7 +420,7 @@
       const world = {
         level: 1,
         score: 0,
-        lives: 3,
+        lives: 5,
         paddle: { x: W / 2, y: H - 60, w: 140, h: 18, speed: 720 },
         ball: { x: W / 2, y: H - 80, r: 8, vx: 0, vy: 0, speed: 420, stuck: true },
         bricks: [],
@@ -589,7 +589,7 @@
           if (b.y - b.r > H) {
             world.lives -= 1; updateHUD();
             beep(110, .2, 'sawtooth', .03);
-            if (world.lives < 0) {
+            if (world.lives = 0) {
               // game over
               endGame();
               return;
@@ -666,7 +666,7 @@
       function startGame(fromSnapshot = false) {
         state = State.PLAY; hide(menu, gameOverOverlay, pauseOverlay);
         // reset world
-        world.level = 1; world.score = 0; world.lives = 3;
+        world.level = 1; world.score = 0; world.lives = 5;
         world.paddle = { x: W / 2, y: H - 60, w: 140, h: 18, speed: 720 * difficultyMultiplier() };
         const speedMul = difficultyMultiplier();
         world.ball = { x: W / 2, y: H - 80, r: 8, vx: 0, vy: 0, speed: 420 * speedMul, stuck: true };
