@@ -589,9 +589,10 @@
           if (b.y - b.r > H) {
             world.lives -= 1; updateHUD();
             beep(110, .2, 'sawtooth', .03);
-            if (world.lives = 0) {
+            if (world.lives < 1) {
               // game over
               endGame();
+              livesEl.textContent = 0;
               return;
             } else {
               resetBall();
@@ -631,7 +632,7 @@
             world.level += 1; levelEl.textContent = world.level;
             // increase speeds slightly, add life every 3 levels
             world.paddle.w = Math.max(90, world.paddle.w - 6);
-            world.ball.speed *= 1.06;
+            world.ball.speed *= 1.04;
             if (world.level % 3 === 0) { world.lives = Math.min(5, world.lives + 1); }
             resetBall();
             buildLevel(world.level);
