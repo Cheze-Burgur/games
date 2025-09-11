@@ -5,7 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>The Sweeper, by Cheze</title>
-    <link rel="icon" type="image/x-icon" href="https://images.emojiterra.com/google/noto-emoji/unicode-15/color/512px/1f4a3.png">
+    <link rel="icon" type="image/x-icon"
+        href="https://images.emojiterra.com/google/noto-emoji/unicode-15/color/512px/1f4a3.png">
     <style>
         :root {
             --bg-deep: #0f2940;
@@ -55,12 +56,13 @@
         .wrap {
             position: relative;
             z-index: 1;
-            width: 100%;
-            max-width: 1100px;
-            display: grid;
-            grid-template-columns: 360px 1fr;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
             gap: 28px;
-            align-items: start
+            width: auto;
+            max-width: 100vw;
         }
 
         .panel {
@@ -180,7 +182,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            align-items: center
+            align-items: center;
         }
 
         .game-bar {
@@ -286,8 +288,9 @@
         /* responsive */
         @media (max-width:900px) {
             .wrap {
-                grid-template-columns: 1fr;
-                max-width: 720px
+                flex-direction: column;
+                align-items: center;
+                max-width: 720px;
             }
         }
 
@@ -343,76 +346,113 @@
         .muted {
             color: var(--muted)
         }
+
+        .center-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 100vw;
+            min-height: 100vh;
+            overflow: auto;
+        }
+
+        .cell.small {
+            width: 28px;
+            height: 28px;
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 
 <body>
     <canvas id="particle-canvas"></canvas>
-    <div class="wrap">
-        <div class="panel">
-            <header>
-                <div class="logo">💣</div>
-                <div>
-                    <h1>The Sweeper</h1>
-                    <p class="lead">A Classic, by Cheze</p>
-                </div>
-            </header>
-
-            <div class="controls">
-                <div class="row">
-                    <label for="difficulty" class="muted">Difficulty</label>
-                    <select id="difficulty" aria-label="Select difficulty">
-                        <option value="easy">Easy (9×9, 10 mines)</option>
-                        <option value="medium" selected>Medium (16×16, 40 mines)</option>
-                        <option value="hard">Hard (16×30, 99 mines)</option>
-                    </select>
-                </div>
-
-                <div class="row">
-                    <button id="newGame" class="btn-primary">New Game</button>
-                    <button id="resetHighscores" class="btn-ghost">Reset Highscores</button>
-                </div>
-
-                <div class="stats">
-                    <div class="stat">
-                        <strong id="mineCount">40</strong>
-                        <small>Mines</small>
+    <div class="center-wrap">
+        <div class="wrap">
+            <div class="panel">
+                <header>
+                    <div class="logo">💣</div>
+                    <div>
+                        <h1>The Sweeper</h1>
+                        <p class="lead">A Classic, by Cheze</p>
                     </div>
-                    <div class="stat">
-                        <strong id="flagCount">0</strong>
-                        <small>Flags</small>
+                </header>
+
+                <div class="controls">
+                    <div class="row">
+                        <label for="difficulty" class="muted">Difficulty</label>
+                        <select id="difficulty" aria-label="Select difficulty">
+                            <option value="easy">Easy (9×9, 10 mines)</option>
+                            <option value="medium" selected>Medium (16×16, 40 mines)</option>
+                            <option value="hard">Hard (16×30, 99 mines)</option>
+                        </select>
                     </div>
-                    <div class="stat">
-                        <strong id="timer">00:00</strong>
-                        <small>Time</small>
+
+                    <div class="row">
+                        <button id="newGame" class="btn-primary">New Game</button>
+                        <button id="resetHighscores" class="btn-ghost">Reset Highscores</button>
                     </div>
+
+                    <div class="stats">
+                        <div class="stat">
+                            <strong id="mineCount">40</strong>
+                            <small>Mines</small>
+                            <div id="mineIcons"
+                                style="margin-top:4px;display:flex;gap:2px;flex-wrap:wrap;justify-content:center;">
+                            </div>
+                        </div>
+                        <div class="stat">
+                            <strong id="flagCount">0</strong>
+                            <small>Flags</small>
+                        </div>
+                        <div class="stat">
+                            <strong id="timer">00:00</strong>
+                            <small>Time</small>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="hs-row"><span>Best — Easy</span><span id="best-easy">—</span></div>
+                        <div class="hs-row"><span>Best — Medium</span><span id="best-medium">—</span></div>
+                        <div class="hs-row"><span>Best — Hard</span><span id="best-hard">—</span></div>
+                    </div>
+
+                    <footer>Left-click to reveal • Right-click to flag<br><br>©Cheze 2025</footer>
                 </div>
-
-                <div class="card">
-                    <div class="hs-row"><span>Best — Easy</span><span id="best-easy">—</span></div>
-                    <div class="hs-row"><span>Best — Medium</span><span id="best-medium">—</span></div>
-                    <div class="hs-row"><span>Best — Hard</span><span id="best-hard">—</span></div>
-                </div>
-
-                <footer>Left-click to reveal • Right-click to flag<br><br>©Cheze 2025</footer>
-            </div>
-        </div>
-
-        <div class="panel board-wrap">
-            <div class="game-bar">
-                <div class="smiley" id="resetBtn" title="Restart">🙂</div>
-                <div style="flex:1"></div>
-                <div class="muted">Click a cell to begin</div>
             </div>
 
-            <div id="boardContainer" style="width:100%;display:flex;justify-content:center">
-                <div id="board" class="board" role="grid" aria-label="Minesweeper board"></div>
-            </div>
+            <div class="panel board-wrap">
+                <div class="game-bar">
+                    <div class="smiley" id="resetBtn" title="Restart">🙂</div>
+                    <div style="flex:1"></div>
+                    <div class="muted">Click a cell to begin</div>
+                </div>
 
+                <div id="boardContainer" style="width:100%;display:flex;justify-content:center;">
+                    <div id="board" class="board" role="grid" aria-label="Minesweeper board"></div>
+                </div>
+
+
+            </div>
         </div>
     </div>
 
     <script>
+        // --- Simple beep SFX using Web Audio API ---
+        function playBeep(type) {
+            const ctx = window._beepCtx || (window._beepCtx = new (window.AudioContext || window.webkitAudioContext)());
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            let freq = 440, dur = 0.08, vol = 0.08;
+            if (type === 'flag') { freq = 660; dur = 0.09; vol = 0.18; } // was 0.09
+            if (type === 'mine') { freq = 120; dur = 0.22; vol = 0.28; } // was 0.13
+            o.type = 'sine';
+            o.frequency.value = freq;
+            g.gain.value = vol;
+            o.connect(g).connect(ctx.destination);
+            o.start();
+            o.stop(ctx.currentTime + dur);
+        }
         /* --------- Game configuration & state --------- */
         const DIFFICULTY = {
             easy: { rows: 9, cols: 9, mines: 10 },
@@ -434,7 +474,28 @@
         const newGameBtn = document.getElementById('newGame');
         const resetHsBtn = document.getElementById('resetHighscores');
 
+        const mineIconsEl = document.getElementById('mineIcons');
         const bestEls = { easy: document.getElementById('best-easy'), medium: document.getElementById('best-medium'), hard: document.getElementById('best-hard') };
+
+
+        // --- Visual mine counter ---
+        function updateMineIcons() {
+            if (!mineIconsEl) return;
+            const minesLeft = state.mines - state.flags;
+            mineIconsEl.innerHTML = '';
+            for (let i = 0; i < Math.max(0, Math.min(minesLeft, 5)); i++) {
+                const span = document.createElement('span');
+                span.textContent = '💣';
+                span.style.fontSize = '1.1em';
+                mineIconsEl.appendChild(span);
+            }
+            if (minesLeft > 5) {
+                const more = document.createElement('span');
+                more.textContent = `+${minesLeft - 5}`;
+                more.style.marginLeft = '2px';
+                mineIconsEl.appendChild(more);
+            }
+        }
 
         /* ---------- Utilities ---------- */
         function formatTime(t) { const m = Math.floor(t / 60); const s = t % 60; return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` }
@@ -459,6 +520,7 @@
             const cfg = DIFFICULTY[diff];
             state.rows = cfg.rows; state.cols = cfg.cols; state.mines = cfg.mines; state.firstClick = true;
             mineCountEl.textContent = state.mines; flagCountEl.textContent = '0';
+            updateMineIcons();
             updateBoardGrid();
         }
 
@@ -510,8 +572,10 @@
             cell.el.classList.remove('flagged');
             if (cell.mine) {
                 cell.el.classList.add('mine');
+                playBeep('mine');
                 endGame(false); return;
             }
+            playBeep('reveal');
             if (cell.adj > 0) {
                 cell.el.textContent = cell.adj; cell.el.classList.add('n' + cell.adj);
             } else {
@@ -549,63 +613,83 @@
             const cell = state.board[r][c];
             if (cell.revealed) return;
             cell.flagged = !cell.flagged;
-            if (cell.flagged) { cell.el.classList.add('flagged'); cell.el.textContent = '🚩'; state.flags++; }
-            else { cell.el.classList.remove('flagged'); cell.el.textContent = ''; state.flags--; }
+            if (cell.flagged) {
+                cell.el.classList.add('flagged');
+                cell.el.textContent = '🚩';
+                state.flags++;
+                playBeep('flag');
+            } else {
+                cell.el.classList.remove('flagged');
+                cell.el.textContent = '';
+                state.flags--;
+            }
             flagCountEl.textContent = state.flags;
+            updateMineIcons();
         }
 
         /* ---------- Rendering / event wiring ---------- */
         function updateBoardGrid() {
             createEmptyBoard();
             boardEl.innerHTML = '';
-            boardEl.style.gridTemplateColumns = `repeat(${state.cols}, 34px)`;
-            boardEl.style.gridTemplateRows = `repeat(${state.rows}, 34px)`;
+            updateMineIcons();
+            // scale down for hard mode
+            const isHard = difficultySel.value === 'hard';
+            boardEl.style.gridTemplateColumns = `repeat(${state.cols}, ${isHard ? 28 : 34}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${state.rows}, ${isHard ? 28 : 34}px)`;
             for (let r = 0; r < state.rows; r++) {
                 for (let c = 0; c < state.cols; c++) {
-                    const div = document.createElement('div'); div.className = 'cell'; div.setAttribute('role', 'button'); div.setAttribute('aria-label', `Cell ${r + 1},${c + 1}`);
+                    const div = document.createElement('div');
+                    div.className = 'cell' + (isHard ? ' small' : '');
+                    div.setAttribute('role', 'button');
+                    div.setAttribute('aria-label', `Cell ${r + 1},${c + 1}`);
                     boardEl.appendChild(div);
                     state.board[r][c].el = div;
                     // left click
                     div.addEventListener('click', (e) => {
+                        const cell = state.board[r][c];
+                        if (cell.revealed && cell.adj > 0) {
+                            // Chord: reveal all unrevealed, unflagged neighbors if flag count matches number
+                            let flagCount = 0;
+                            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                                const nr = r + dr, nc = c + dc;
+                                if (nr < 0 || nc < 0 || nr >= state.rows || nc >= state.cols) continue;
+                                if (state.board[nr][nc].flagged) flagCount++;
+                            }
+                            if (flagCount === cell.adj) {
+                                for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                                    const nr = r + dr, nc = c + dc;
+                                    if (nr < 0 || nc < 0 || nr >= state.rows || nc >= state.cols) continue;
+                                    if (!state.board[nr][nc].revealed && !state.board[nr][nc].flagged) revealCell(nr, nc);
+                                }
+                                return;
+                            }
+                        }
                         onCellClick(r, c);
                     });
                     // right click
                     div.addEventListener('contextmenu', (e) => { e.preventDefault(); toggleFlag(r, c); });
-                    // double click to reveal neighbors if numbers matched
-                    function onCellClick(r, c) {
-                        if (state.ended) return;
-                        const cell = state.board[r][c];
 
-                        // First move = place mines
-                        if (state.firstClick) {
-                            placeMines(r, c);
-                            state.firstClick = false;
-                            startTimer();
-                            state.started = true;
+                    // --- Touch support: long-press to flag ---
+                    let touchTimer = null;
+                    let touchMoved = false;
+                    div.addEventListener('touchstart', (e) => {
+                        touchMoved = false;
+                        touchTimer = setTimeout(() => {
+                            toggleFlag(r, c);
+                            touchTimer = null;
+                        }, 400);
+                    });
+                    div.addEventListener('touchmove', () => {
+                        touchMoved = true;
+                        if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+                    });
+                    div.addEventListener('touchend', (e) => {
+                        if (touchTimer) {
+                            clearTimeout(touchTimer);
+                            if (!touchMoved) onCellClick(r, c);
+                            touchTimer = null;
                         }
-
-                        // If cell is already revealed and has a number -> try chording
-                        if (cell.revealed && cell.adj > 0) {
-                            let flags = 0;
-                            for (let dr = -1; dr <= 1; dr++)for (let dc = -1; dc <= 1; dc++) {
-                                const nr = r + dr, nc = c + dc;
-                                if (nr < 0 || nc < 0 || nr >= state.rows || nc >= state.cols) continue;
-                                if (state.board[nr][nc].flagged) flags++;
-                            }
-                            if (flags === cell.adj) {
-                                for (let dr = -1; dr <= 1; dr++)for (let dc = -1; dc <= 1; dc++) {
-                                    const nr = r + dr, nc = c + dc;
-                                    if (nr < 0 || nc < 0 || nr >= state.rows || nc >= state.cols) continue;
-                                    if (!state.board[nr][nc].flagged) revealCell(nr, nc);
-                                }
-                            }
-                            return;
-                        }
-
-                        // Normal reveal
-                        revealCell(r, c);
-                    }
-
+                    });
                 }
             }
         }
