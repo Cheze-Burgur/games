@@ -1,0 +1,52 @@
+body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #232946 0%, #16161a 100%);
+      color: #f4f4f8;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+}
+
+#info {
+      text-align: center;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      background: rgba(30, 41, 59, 0.85);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+      padding: 18px 36px 12px 36px;
+      border: 1.5px solid #2ec4b6;
+      max-width: 520px;
+}
+
+    #info h2 {
+      margin: 0 0 8px 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #2ec4b6;
+      text-shadow: 0 2px 8px #111a;
+    }
+
+    #info div {
+      font-size: 1.1rem;
+      color: #f7b801;
+      text-shadow: 0 1px 4px #000a;
+    }
+
+    #gameCanvas {
+      background: linear-gradient(135deg, #232946 60%, #16161a 100%);
+      display: block;
+      margin: 24px auto 0 auto;
+      border: 3px solid #2ec4b6;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px 0 #000a, 0 1.5px 0 #2ec4b6;
+      transition: box-shadow 0.2s;
+    }
+
+    #gameCanvas:focus {
+      outline: 2px solid #f7b801;
+      box-shadow: 0 0 0 4px #f7b80155, 0 8px 32px 0 #000a;
+    }
