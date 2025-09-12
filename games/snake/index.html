@@ -5,7 +5,192 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>The Snake</title>
-    <link type="stylesheet", href="styles.css">
+    <style>
+        :root {
+            --bg: #0f2540;
+            /* deep navy */
+            --panel: #122b46;
+            /* slightly lighter */
+            --accent: #ff8a33;
+            /* orange */
+            --muted: #9fb7d6;
+            /* light blue */
+            --cell: #0b1b2c;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-2: rgba(255, 255, 255, 0.04);
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            background: linear-gradient(180deg, var(--bg), #071523);
+            color: var(--muted);
+        }
+
+        .wrap {
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px
+        }
+
+        .card {
+            width: 100%;
+            max-width: 980px;
+            background: linear-gradient(180deg, var(--panel), #0b2337);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 30px rgba(3, 8, 14, 0.6);
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 18px
+        }
+
+        header {
+            grid-column: 1/-1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            color: #eaf6ff
+        }
+
+        .sub {
+            font-size: 0.9rem;
+            color: var(--muted)
+        }
+
+        /* Game area */
+        .game-area {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center
+        }
+
+        canvas {
+            background: linear-gradient(180deg, #071a2b, #05202f);
+            border-radius: 10px;
+            display: block;
+            max-width: 100%;
+            height: auto
+        }
+
+        .grid-info {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .pill {
+            background: var(--glass);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+
+        /* Right panel */
+        .panel {
+            padding: 14px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.015));
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: var(--glass-2)
+        }
+
+        .stat strong {
+            color: #eaf6ff
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px
+        }
+
+        select,
+        input[type=range] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--muted)
+        }
+
+        button {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .btn-accent {
+            background: linear-gradient(90deg, var(--accent), #ff6f00);
+            color: #06121a
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--muted)
+        }
+
+        .footer {
+            grid-column: 1/-1;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: rgba(200, 220, 255, 0.6)
+        }
+
+        /* small screens */
+        @media (max-width:920px) {
+            .card {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                order: 2
+            }
+        }
+
+        /* nice focus visuals */
+        button:focus,
+        select:focus,
+        input:focus {
+            outline: 2px solid rgba(255, 138, 51, 0.18);
+            outline-offset: 2px
+        }
+    </style>
 </head>
 
 <body>
