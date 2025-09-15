@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pixel Art Maker</title>
+    <style>
+        :root {
+            --bg: #244b6d;
+            /* deep blue */
+            --panel: #17384a;
+            --accent: #f08a2d;
+            /* orange-ish */
+            --muted: #f5deb3;
+            --card: #f5deb3;
+            --card-dark: #444;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--muted)
+        }
+
+        .app {
+            display: flex;
+            gap: 18px;
+            padding: 18px;
+            height: 100%;
+            box-sizing: border-box
+        }
+
+        aside {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 18px;
+            border-radius: 10px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3)
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            color: var(--muted)
+        }
+
+        .tools {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px
+        }
+
+        .tool {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent
+        }
+
+        .tool.active {
+            border-color: var(--accent);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35)
+        }
+
+        .color-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px
+        }
+
+        .color-input {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .color-swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 2px solid rgba(0, 0, 0, 0.25)
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 6px
+        }
+
+        .control {
+            margin-bottom: 12px
+        }
+
+        input[type=range] {
+            width: 100%
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px
+        }
+
+        button {
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 10px 12px;
+            border: none;
+            background: var(--accent);
+            color: #102227;
+            font-weight: 600
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--muted)
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .canvas-wrap {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.02));
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5)
+        }
+
+        .canvas-stage {
+            position: relative;
+            display: inline-block
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none
+        }
+
+        footer {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center
+        }
+
+        .small {
+            font-size: 0.85rem;
+            color: var(--muted)
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        input[type=number] {
+            width: 88px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.15)
+        }
+
+        .tool-legend {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 8px
+        }
+
+        .filled-toggle {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: rgba(245, 222, 179, 0.9);
+            margin-top: 6px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <aside>
+            <header>
+                <div
+                    style="width:44px;height:44px;border-radius:8px;background:var(--panel);display:flex;align-items:center;justify-content:center">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="2" width="20" height="20" stroke="#ff5500" stroke-opacity="1" rx="3" />
+                        <rect x="5" y="5" width="3" height="3" fill="#ff5500" fill-opacity="1" />
+                        <rect x="9" y="5" width="3" height="3" fill="#ff5500" fill-opacity="1" />
+                    </svg>
+                </div>
+                <h1>Pixel Art Maker</h1>
+            </header>
+
+            <div class="tools" title="Tools">
+                <div class="tool active" data-tool="pencil">Pencil</div>
+                <div class="tool" data-tool="line">Line</div>
+                <div class="tool" data-tool="rect">Rectangle</div>
+                <div class="tool" data-tool="oval">Oval</div>
+                <div class="tool" data-tool="fill">Fill</div>
+                <div class="tool" data-tool="eyedropper">Eyedropper</div>
+            </div>
+
+            <div class="control">
+                <label>Color</label>
+                <div class="color-row">
+                    <div class="color-swatch" id="swatch" style="background:#000"></div>
+                    <div class="color-input">
+                        <input type="color" id="colorPicker" value="#000000" />
+                        <input type="text" id="hexInput" value="#000000" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="control">
+                <label>Canvas size (pixels)</label>
+                <div class="row">
+                    <input type="number" id="canvasSize" min="8" max="1024" step="1" value="300" />
+                    <button id="resizeBtn" class="secondary">Resize</button>
+                </div>
+                <div class="hint">Changing size recreates the canvas (option to keep current drawing will be asked).
+                </div>
+            </div>
+
+            <div class="control">
+                <label>Zoom / Display scale</label>
+                <input id="zoom" type="range" min="2" max="20" value="2" step="0.5"/>
+                <div class="small">Zoom: <span id="zoomVal">2×</span></div>
+                <label style="margin-top:8px"><input type="checkbox" id="showGrid" checked /> Show grid lines</label>
+            </div>
+
+            <div class="control">
+                <label>Shape options</label>
+                <div class="filled-toggle">
+                    <label><input type="checkbox" id="fillShapes" checked /> Filled shapes</label>
+                </div>
+            </div>
+
+            <div class="control">
+                <label>Export</label>
+                <div class="btn-row">
+                    <button id="exportBtn">Save / Export PNG</button>
+                    <button id="clearBtn" class="secondary">Clear</button>
+                </div>
+                <div class="hint">Export produces a crisp PNG (no smoothing). Use zoom to preview larger pixels.</div>
+            </div>
+
+            <div class="tool-legend">
+                <strong>Tool quick keys:</strong>
+                <ul style="list-style-type: square;">
+                    <li>P = Pencil</li>
+                    <li>L = Line</li>
+                    <li>R = Rectangle</li>
+                    <li>O = Oval</li>
+                    <li>F = Fill</li>
+                    <li>I = Eyedropper</li>
+                </ul>
+            </div>
+
+        </aside>
+
+        <main>
+            <div class="canvas-wrap">
+                <div class="canvas-stage">
+                    <!-- main pixel canvas (internal resolution = grid size) -->
+                    <canvas id="mainCanvas"></canvas>
+                    <!-- overlay for shape previews -->
+                    <canvas id="overlayCanvas" class="grid-overlay"></canvas>
+                </div>
+                <footer>
+                    <div class="small">Canvas: <span id="sizeReadout">300 × 300</span> — Tool: <span
+                            id="activeTool">Pencil</span></div>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* Pixel Editor
+           - Internal pixel grid size = canvas.width / .height (default 300)
+           - CSS display scaled by zoom slider
+           - Tools: pencil, line (bresenham), rect, oval, fill (flood), eyedropper
+        */
+
+        const DEFAULT_SIZE = 300;
+
+        const mainCanvas = document.getElementById('mainCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const colorPicker = document.getElementById('colorPicker');
+        const hexInput = document.getElementById('hexInput');
+        const swatch = document.getElementById('swatch');
+        const canvasSizeInput = document.getElementById('canvasSize');
+        const resizeBtn = document.getElementById('resizeBtn');
+        const toolButtons = document.querySelectorAll('.tool');
+        const activeToolLabel = document.getElementById('activeTool');
+        const sizeReadout = document.getElementById('sizeReadout');
+        const zoomRange = document.getElementById('zoom');
+        const zoomVal = document.getElementById('zoomVal');
+        const showGrid = document.getElementById('showGrid');
+        const fillShapes = document.getElementById('fillShapes');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let state = {
+            tool: 'pencil',
+            color: '#000000',
+            size: DEFAULT_SIZE,
+            zoom: Number(zoomRange.value),
+            drawing: false,
+            start: null,
+            imgData: null // ImageData for main canvas
+        };
+
+        // init canvas with default size
+        function initCanvas(size = DEFAULT_SIZE, keepImage = false) {
+            // set internal resolution
+            mainCanvas.width = size;
+            mainCanvas.height = size;
+            overlayCanvas.width = size;
+            overlayCanvas.height = size;
+
+            // style display to zoom
+            const scale = state.zoom;
+            mainCanvas.style.width = (size * scale) + 'px';
+            mainCanvas.style.height = (size * scale) + 'px';
+            overlayCanvas.style.width = (size * scale) + 'px';
+            overlayCanvas.style.height = (size * scale) + 'px';
+
+            // set pixel-perfect rendering
+            const ctx = mainCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            if (!keepImage) {
+                // fill transparent / white background
+                ctx.clearRect(0, 0, size, size);
+                // initialize imgData
+                state.imgData = ctx.getImageData(0, 0, size, size);
+            } else {
+                // keep existing data - ensure size matches
+                const newData = ctx.createImageData(size, size);
+                // copy overlapping region if possible
+                if (state.imgData) {
+                    const old = state.imgData;
+                    const minW = Math.min(old.width, newData.width);
+                    const minH = Math.min(old.height, newData.height);
+                    for (let y = 0; y < minH; y++) {
+                        for (let x = 0; x < minW; x++) {
+                            const iOld = (y * old.width + x) * 4;
+                            const iNew = (y * newData.width + x) * 4;
+                            newData.data[iNew] = old.data[iOld];
+                            newData.data[iNew + 1] = old.data[iOld + 1];
+                            newData.data[iNew + 2] = old.data[iOld + 2];
+                            newData.data[iNew + 3] = old.data[iOld + 3];
+                        }
+                    }
+                }
+                state.imgData = newData;
+                ctx.putImageData(state.imgData, 0, 0);
+            }
+
+            // overlay clear
+            overlayCanvas.getContext('2d').clearRect(0, 0, size, size);
+
+            // grid toggle visual (draw on overlay)
+            drawGridOverlay();
+            updateReadout();
+        }
+
+        function updateReadout() {
+            sizeReadout.textContent = `${mainCanvas.width} × ${mainCanvas.height}`;
+            activeToolLabel.textContent = capitalize(state.tool);
+        }
+
+        function setTool(toolName) {
+            state.tool = toolName;
+            toolButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tool === toolName));
+            updateReadout();
+        }
+
+        function hexToRGBA(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const n = parseInt(hex, 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
+        }
+
+        function rgbaToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        function setColor(hex) {
+            state.color = hex;
+            swatch.style.background = hex;
+            hexInput.value = hex;
+            colorPicker.value = hex;
+        }
+
+        // event: color inputs
+        colorPicker.addEventListener('input', e => setColor(e.target.value));
+        hexInput.addEventListener('change', e => {
+            let v = e.target.value.trim();
+            if (!v.startsWith('#')) v = '#' + v;
+            // validate 3 or 6 hex
+            if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
+                setColor(v);
+            } else {
+                // revert
+                e.target.value = state.color;
+            }
+        });
+
+        // tool clicks
+        toolButtons.forEach(btn => btn.addEventListener('click', () => setTool(btn.dataset.tool)));
+
+        setTool('pencil');
+        setColor('#000000');
+
+        // zoom control
+        zoomRange.addEventListener('input', () => {
+            state.zoom = Number(zoomRange.value);
+            zoomVal.textContent = state.zoom + '×';
+            // update display size
+            const s = mainCanvas.width;
+            mainCanvas.style.width = (s * state.zoom) + 'px';
+            mainCanvas.style.height = (s * state.zoom) + 'px';
+            overlayCanvas.style.width = (s * state.zoom) + 'px';
+            overlayCanvas.style.height = (s * state.zoom) + 'px';
+            drawGridOverlay();
+        });
+
+        // grid toggle
+        showGrid.addEventListener('change', drawGridOverlay);
+
+        // resize canvas
+        resizeBtn.addEventListener('click', () => {
+            const newSize = Math.max(8, Math.min(1024, Number(canvasSizeInput.value || DEFAULT_SIZE)));
+            if (newSize === mainCanvas.width) return;
+            // Ask user to keep current drawing - but we must not ask per system instructions? The developer instructions said if unsure ask to browse; not relevant. We can prompt a confirm dialog (allowed).
+            const keep = confirm('Keep current drawing contents where possible when resizing? Click Cancel to start fresh.');
+            initCanvas(newSize, keep);
+        });
+
+        // clear
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear the canvas?')) {
+                const ctx = mainCanvas.getContext('2d');
+                ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+                state.imgData = ctx.getImageData(0, 0, mainCanvas.width, mainCanvas.height);
+                drawGridOverlay();
+            }
+        });
+
+        // export
+        exportBtn.addEventListener('click', () => {
+            // ask for export scale
+            let scale = parseInt(prompt('Export scale (pixels per grid cell). 1 = exact size. For a larger image use e.g. 8 or 10.', '8'));
+            if (isNaN(scale) || scale < 1) scale = 1;
+            // create temporary canvas
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = mainCanvas.width * scale;
+            exportCanvas.height = mainCanvas.height * scale;
+            const exCtx = exportCanvas.getContext('2d');
+            exCtx.imageSmoothingEnabled = false;
+
+            // draw the pixel data scaled
+            const tmp = document.createElement('canvas');
+            tmp.width = mainCanvas.width;
+            tmp.height = mainCanvas.height;
+            const tctx = tmp.getContext('2d');
+            tctx.putImageData(state.imgData, 0, 0);
+
+            exCtx.drawImage(tmp, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            // download
+            exportCanvas.toBlob(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `pixel-art-${mainCanvas.width}x${mainCanvas.height}x${scale}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }, 'image/png');
+        });
+
+        // coordinate helpers
+        function getPointerPixel(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX !== undefined ? e.clientX : e.touches && e.touches[0].clientX;
+            const clientY = e.clientY !== undefined ? e.clientY : e.touches && e.touches[0].clientY;
+            const x = Math.floor(((clientX - rect.left) / rect.width) * canvas.width);
+            const y = Math.floor(((clientY - rect.top) / rect.height) * canvas.height);
+            return { x: clamp(x, 0, canvas.width - 1), y: clamp(y, 0, canvas.height - 1) };
+        }
+
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+        // draw pixel directly to state.imgData and putImageData
+        function setPixel(x, y, rgba) {
+            const idx = (y * state.imgData.width + x) * 4;
+            state.imgData.data[idx] = rgba[0];
+            state.imgData.data[idx + 1] = rgba[1];
+            state.imgData.data[idx + 2] = rgba[2];
+            state.imgData.data[idx + 3] = rgba[3] !== undefined ? rgba[3] : 255;
+        }
+
+        function getPixelRGBA(x, y) {
+            const idx = (y * state.imgData.width + x) * 4;
+            return [
+                state.imgData.data[idx],
+                state.imgData.data[idx + 1],
+                state.imgData.data[idx + 2],
+                state.imgData.data[idx + 3]
+            ];
+        }
+
+        function redrawMain() {
+            const ctx = mainCanvas.getContext('2d');
+            ctx.putImageData(state.imgData, 0, 0);
+        }
+
+        // simple helpers for drawing shapes onto imgData
+        function drawLinePixels(x0, y0, x1, y1, colorRGBA) {
+            // Bresenham
+            let dx = Math.abs(x1 - x0);
+            let sx = x0 < x1 ? 1 : -1;
+            let dy = -Math.abs(y1 - y0);
+            let sy = y0 < y1 ? 1 : -1;
+            let err = dx + dy;
+            while (true) {
+                setPixel(x0, y0, colorRGBA);
+                if (x0 === x1 && y0 === y1) break;
+                let e2 = 2 * err;
+                if (e2 >= dy) { err += dy; x0 += sx; }
+                if (e2 <= dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        function drawRectPixels(x0, y0, x1, y1, colorRGBA, filled = true) {
+            const xMin = Math.min(x0, x1), xMax = Math.max(x0, x1);
+            const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
+            if (filled) {
+                for (let y = yMin; y <= yMax; y++) {
+                    let base = (y * state.imgData.width + xMin) * 4;
+                    for (let x = xMin; x <= xMax; x++) {
+                        setPixel(x, y, colorRGBA);
+                    }
+                }
+            } else {
+                for (let x = xMin; x <= xMax; x++) { setPixel(x, yMin, colorRGBA); setPixel(x, yMax, colorRGBA); }
+                for (let y = yMin; y <= yMax; y++) { setPixel(xMin, y, colorRGBA); setPixel(xMax, y, colorRGBA); }
+            }
+        }
+
+        function drawEllipsePixels(x0, y0, x1, y1, colorRGBA, filled = true) {
+            // midpoint ellipse approximation scaled to pixel grid
+            const cx = (x0 + x1) / 2;
+            const cy = (y0 + y1) / 2;
+            const rx = Math.abs(x1 - x0) / 2;
+            const ry = Math.abs(y1 - y0) / 2;
+            if (rx < 0.5 || ry < 0.5) {
+                setPixel(Math.round(cx), Math.round(cy), colorRGBA);
+                return;
+            }
+            // iterate bounding box and test ellipse equation (cheap, fine for 300x300)
+            const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
+            const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
+            const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
+            for (let y = yMin; y <= yMax; y++) {
+                for (let x = xMin; x <= xMax; x++) {
+                    const dx = (x - cx), dy = (y - cy);
+                    const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
+                    if (filled) {
+                        if (val <= 1) setPixel(x, y, colorRGBA);
+                    } else {
+                        // outline: check if within small band near 1
+                        if (Math.abs(val - 1) <= 0.7 / Math.max(rx, ry)) setPixel(x, y, colorRGBA);
+                    }
+                }
+            }
+        }
+
+        // flood fill (stack-based)
+        function floodFill(sx, sy, targetRGBA, replacementRGBA) {
+            const w = state.imgData.width, h = state.imgData.height;
+            if (targetRGBA[0] === replacementRGBA[0] && targetRGBA[1] === replacementRGBA[1] && targetRGBA[2] === replacementRGBA[2] && targetRGBA[3] === replacementRGBA[3]) return;
+            // compare function
+            function same(x, y, rgba) {
+                const p = getPixelRGBA(x, y);
+                return p[0] === rgba[0] && p[1] === rgba[1] && p[2] === rgba[2] && p[3] === rgba[3];
+            }
+            const stack = [[sx, sy]];
+            while (stack.length) {
+                const [x, y] = stack.pop();
+                if (x < 0 || x >= w || y < 0 || y >= h) continue;
+                if (!same(x, y, targetRGBA)) continue;
+                setPixel(x, y, replacementRGBA);
+                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+        }
+
+        // overlay (preview) canvas drawing (cleared between operations)
+        function clearOverlay() { overlayCanvas.getContext('2d').clearRect(0, 0, overlayCanvas.width, overlayCanvas.height); }
+
+        function drawOverlayLine(x0, y0, x1, y1) {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            ctx.fillStyle = hexToCSS(state.color);
+            // draw using same bresenham but onto overlay data (use 1x1 rects)
+            let dx = Math.abs(x1 - x0);
+            let sx = x0 < x1 ? 1 : -1;
+            let dy = -Math.abs(y1 - y0);
+            let sy = y0 < y1 ? 1 : -1;
+            let err = dx + dy;
+            while (true) {
+                ctx.fillRect(x0, y0, 1, 1);
+                if (x0 === x1 && y0 === y1) break;
+                let e2 = 2 * err;
+                if (e2 >= dy) { err += dy; x0 += sx; }
+                if (e2 <= dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        function drawOverlayRect(x0, y0, x1, y1, filled) {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            ctx.fillStyle = hexToCSS(state.color);
+            const xMin = Math.min(x0, x1), xMax = Math.max(x0, x1);
+            const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
+            if (filled) ctx.fillRect(xMin, yMin, xMax - xMin + 1, yMax - yMin + 1);
+            else {
+                ctx.fillRect(xMin, yMin, xMax - xMin + 1, 1);
+                ctx.fillRect(xMin, yMax, xMax - xMin + 1, 1);
+                ctx.fillRect(xMin, yMin, 1, yMax - yMin + 1);
+                ctx.fillRect(xMax, yMin, 1, yMax - yMin + 1);
+            }
+        }
+
+        function drawOverlayOval(x0, y0, x1, y1, filled) {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            ctx.fillStyle = hexToCSS(state.color);
+            // simple bounding box test like in drawEllipsePixels
+            const cx = (x0 + x1) / 2;
+            const cy = (y0 + y1) / 2;
+            const rx = Math.abs(x1 - x0) / 2;
+            const ry = Math.abs(y1 - y0) / 2;
+            if (rx < 0.5 || ry < 0.5) {
+                ctx.fillRect(Math.round(cx), Math.round(cy), 1, 1);
+                return;
+            }
+            const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
+            const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
+            const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
+            for (let y = yMin; y <= yMax; y++) {
+                for (let x = xMin; x <= xMax; x++) {
+                    const dx = (x - cx), dy = (y - cy);
+                    const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
+                    if (filled) {
+                        if (val <= 1) ctx.fillRect(x, y, 1, 1);
+                    } else {
+                        if (Math.abs(val - 1) <= 0.7 / Math.max(rx, ry)) ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+
+        function hexToCSS(hex) {
+            // css color string for overlay (full opacity)
+            return hex;
+        }
+
+        // draw grid lines onto overlay canvas (visible if checked)
+        function drawGridOverlay() {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            if (!showGrid.checked) return;
+            const w = overlayCanvas.width, h = overlayCanvas.height;
+            ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+            ctx.lineWidth = 0.03;
+            ctx.beginPath();
+            for (let x = 0; x <= w; x++) {
+                ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h);
+            }
+            for (let y = 0; y <= h; y++) {
+                ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5);
+            }
+            ctx.stroke();
+            // keep overlay transparent but grid visible; overlay will be used also for previews.
+        }
+
+        // painting logic
+        let lastPos = null;
+
+        function onPointerDown(e) {
+            e.preventDefault();
+            const p = getPointerPixel(e, mainCanvas);
+            state.drawing = true;
+            state.start = { x: p.x, y: p.y };
+            lastPos = { x: p.x, y: p.y };
+
+            if (state.tool === 'pencil') {
+                const rgba = hexToRGBA(state.color);
+                setPixel(p.x, p.y, rgba);
+                redrawMain();
+            } else if (state.tool === 'fill') {
+                const target = getPixelRGBA(p.x, p.y);
+                const replacement = hexToRGBA(state.color);
+                floodFill(p.x, p.y, target, replacement);
+                redrawMain();
+            } else if (state.tool === 'eyedropper') {
+                const picked = getPixelRGBA(p.x, p.y);
+                const hex = rgbaToHex(picked[0], picked[1], picked[2]);
+                setColor(hex);
+            } else {
+                // start shape preview
+                clearOverlay();
+                if (state.tool === 'line') drawOverlayLine(p.x, p.y, p.x, p.y);
+                if (state.tool === 'rect') drawOverlayRect(p.x, p.y, p.x, p.y, fillShapes.checked);
+                if (state.tool === 'oval') drawOverlayOval(p.x, p.y, p.x, p.y, fillShapes.checked);
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!state.drawing) return;
+            const p = getPointerPixel(e, mainCanvas);
+            if (state.tool === 'pencil') {
+                const rgba = hexToRGBA(state.color);
+                // draw line between lastPos and p to avoid gaps when moving fast
+                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba);
+                lastPos = { x: p.x, y: p.y };
+                redrawMain();
+            } else if (state.tool === 'line') {
+                drawOverlayLine(state.start.x, state.start.y, p.x, p.y);
+            } else if (state.tool === 'rect') {
+                drawOverlayRect(state.start.x, state.start.y, p.x, p.y, fillShapes.checked);
+            } else if (state.tool === 'oval') {
+                drawOverlayOval(state.start.x, state.start.y, p.x, p.y, fillShapes.checked);
+            }
+        }
+
+        function onPointerUp(e) {
+            if (!state.drawing) return;
+            state.drawing = false;
+            const p = getPointerPixel(e, mainCanvas);
+            if (state.tool === 'pencil') {
+                // already drawn as we moved
+            } else if (state.tool === 'line') {
+                const rgba = hexToRGBA(state.color);
+                drawLinePixels(state.start.x, state.start.y, p.x, p.y, rgba);
+                redrawMain();
+                clearOverlay();
+            } else if (state.tool === 'rect') {
+                const rgba = hexToRGBA(state.color);
+                drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, fillShapes.checked);
+                redrawMain();
+                clearOverlay();
+            } else if (state.tool === 'oval') {
+                const rgba = hexToRGBA(state.color);
+                drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, fillShapes.checked);
+                redrawMain();
+                clearOverlay();
+            }
+        }
+
+        // attach pointer events (support touch)
+        mainCanvas.addEventListener('pointerdown', onPointerDown);
+        mainCanvas.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+
+        // also allow overlay to capture pointer for preview interactions
+        overlayCanvas.addEventListener('pointerdown', onPointerDown);
+        overlayCanvas.addEventListener('pointermove', onPointerMove);
+        overlayCanvas.addEventListener('pointerup', onPointerUp);
+
+        // keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'p' || e.key === 'P') setTool('pencil');
+            if (e.key === 'l' || e.key === 'L') setTool('line');
+            if (e.key === 'r' || e.key === 'R') setTool('rect');
+            if (e.key === 'o' || e.key === 'O') setTool('oval');
+            if (e.key === 'f' || e.key === 'F') setTool('fill');
+            if (e.key === 'i' || e.key === 'I') setTool('eyedropper');
+        });
+
+        // initialize
+        initCanvas(DEFAULT_SIZE);
+
+        // small helpers for hex <-> rgba conversions
+        function hexToRGBA(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const n = parseInt(hex, 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
+        }
+
+        function rgbaToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        // initial UI sync
+        canvasSizeInput.value = DEFAULT_SIZE;
+        zoomVal.textContent = state.zoom + '×';
+        drawGridOverlay();
+
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    </script>
+</body>
+
+</html>
