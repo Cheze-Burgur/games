@@ -518,7 +518,7 @@
         // export
         exportBtn.addEventListener('click', () => {
             // ask for export scale
-            let scale = parseInt(prompt('Export scale (pixels per grid cell). 1 = exact size. For a larger image use e.g. 8 or 10.', '8'));
+            let scale = parseInt(prompt('Export scale (pixels per grid cell). 1 = exact size. For a larger image use e.g. 10.', '10'));
             if (isNaN(scale) || scale < 1) scale = 1;
             // create temporary canvas
             const exportCanvas = document.createElement('canvas');
