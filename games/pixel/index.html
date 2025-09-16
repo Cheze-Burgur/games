@@ -228,7 +228,10 @@
             </header>
 
             <div class="tools" title="Tools">
+                <button id="undoBtn" class="secondary">Undo</button>
+                <button id="redoBtn" class="secondary">Redo</button>
                 <div class="tool active" data-tool="pencil">Pencil</div>
+                <div class="tool" data-tool="eraser">Eraser</div>
                 <div class="tool" data-tool="line">Line</div>
                 <div class="tool" data-tool="rect">Rectangle</div>
                 <div class="tool" data-tool="oval">Oval</div>
@@ -334,6 +337,9 @@
             imgData: null // ImageData for main canvas
         };
 
+        let undoStack = [];
+        let redoStack = [];
+
         // init canvas with default size
         function initCanvas(size = DEFAULT_SIZE, keepImage = false) {
             // set internal resolution
@@ -417,6 +423,42 @@
             hexInput.value = hex;
             colorPicker.value = hex;
         }
+
+        function saveState() {
+            // Save a copy of the current image data
+            undoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
+            // Clear redo stack
+            redoStack = [];
+        }
+
+        function undo() {
+            if (undoStack.length > 0) {
+                redoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
+                const prev = undoStack.pop();
+                mainCanvas.getContext('2d').putImageData(prev, 0, 0);
+                state.imgData = mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height);
+                redrawMain();
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                undoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
+                const next = redoStack.pop();
+                mainCanvas.getContext('2d').putImageData(next, 0, 0);
+                state.imgData = mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height);
+                redrawMain();
+            }
+        }
+
+        document.getElementById('undoBtn').addEventListener('click', undo);
+        document.getElementById('redoBtn').addEventListener('click', redo);
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo();
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') redo();
+        });
 
         // event: color inputs
         colorPicker.addEventListener('input', e => setColor(e.target.value));
@@ -721,10 +763,18 @@
             state.start = { x: p.x, y: p.y };
             lastPos = { x: p.x, y: p.y };
 
+            if (['pencil', 'eraser', 'fill', 'line', 'rect', 'oval'].includes(state.tool)) {
+                saveState();
+            }
+
             if (state.tool === 'pencil') {
                 const rgba = hexToRGBA(state.color);
                 setPixel(p.x, p.y, rgba);
                 redrawMain();
+            } else if (state.tool === 'eraser') {
+                const rgba = [0, 0, 0, 0];
+                setPixel(p.x, p.y, rgba);
+                redrawMain;
             } else if (state.tool === 'fill') {
                 const target = getPixelRGBA(p.x, p.y);
                 const replacement = hexToRGBA(state.color);
@@ -749,6 +799,11 @@
             if (state.tool === 'pencil') {
                 const rgba = hexToRGBA(state.color);
                 // draw line between lastPos and p to avoid gaps when moving fast
+                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba);
+                lastPos = { x: p.x, y: p.y };
+                redrawMain();
+            } else if (state.tool === 'eraser') {
+                const rgba = [0, 0, 0, 0]
                 drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba);
                 lastPos = { x: p.x, y: p.y };
                 redrawMain();
