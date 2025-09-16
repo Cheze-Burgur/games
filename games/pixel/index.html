@@ -31,7 +31,9 @@
             gap: 18px;
             padding: 18px;
             height: 100%;
-            box-sizing: border-box
+            box-sizing: border-box;
+            margin-left: 298px;
+            /* Prevent main content from hiding behind aside */
         }
 
         aside {
@@ -40,7 +42,14 @@
             padding: 18px;
             border-radius: 10px;
             backdrop-filter: blur(4px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3)
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            height: calc(100vh - 36px);
+            overflow-y: auto;
+            z-index: 100;
         }
 
         header {
@@ -219,9 +228,11 @@
                 <div
                     style="width:44px;height:44px;border-radius:8px;background:var(--panel);display:flex;align-items:center;justify-content:center">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                        <rect x="2" y="2" width="20" height="20" stroke="#ff5500" stroke-opacity="1" rx="3" />
-                        <rect x="5" y="5" width="3" height="3" fill="#ff5500" fill-opacity="1" />
-                        <rect x="9" y="5" width="3" height="3" fill="#ff5500" fill-opacity="1" />
+                        <!-- 2x2 grid of pixels -->
+                        <rect x="3" y="3" width="8" height="8" fill="#244b6d" rx="2" />
+                        <rect x="13" y="3" width="8" height="8" fill="#f08a2d" rx="2" />
+                        <rect x="3" y="13" width="8" height="8" fill="#f08a2d" rx="2" />
+                        <rect x="13" y="13" width="8" height="8" fill="#244b6d" rx="2" />
                     </svg>
                 </div>
                 <h1>Pixel Art Maker</h1>
@@ -239,7 +250,7 @@
                 <div class="tool" data-tool="eyedropper">Eyedropper</div>
                 <button id="exportBtn">Export as PNG</button>
                 <button id="clearBtn" class="secondary">Clear</button>
-                <div class="hint">Export produces a crisp PNG (no smoothing).</div>
+                <div class="hint">Export produces a PNG<br>Clear resets the canvas</div>
             </div>
 
             <div class="control">
@@ -268,19 +279,22 @@
                 <input id="zoom" type="range" min="2" max="20" value="3" step="0.25" />
                 <div class="small">Zoom: <span id="zoomVal">3×</span></div>
                 <div class="hint">Use zoom to preview larger pixels.</div>
-                <label style="margin-top:8px"><input type="checkbox" id="showGrid" checked /> Show grid lines</label>
             </div>
 
             <div class="control">
-                <label>Shape options</label>
+                <div class="control">
+                    <label>Stroke Width</label>
+                    <input id="strokeWidth" type="range" min="1" max="30" value="1" />
+                    <div class="small">Width: <span id="strokeWidthVal">1 px</span></div>
+                    <div class="hint">Controls the thickness for pencil, eraser, line, and shape borders.</div>
+                </div>
                 <div class="filled-toggle">
                     <label><input type="checkbox" id="fillShapes" checked /> Filled shapes</label>
                 </div>
             </div>
 
             <div class="tool-legend">
-                <strong>Tool quick keys:</strong> P = Pencil, L = Line,<br>R = Rectangle, O = Oval, F = Fill,<br>I =
-                Eyedropper
+                <strong>Shortcuts:</strong> P = Pencil, L = Line, R = Rectangle, O = Oval, F = Fill, I = Eyedropper
             </div>
 
         </aside>
@@ -302,12 +316,6 @@
     </div>
 
     <script>
-        /* Pixel Editor
-           - Internal pixel grid size = canvas.width / .height (default 300)
-           - CSS display scaled by zoom slider
-           - Tools: pencil, line (bresenham), rect, oval, fill (flood), eyedropper
-        */
-
         const DEFAULT_SIZE = 250;
 
         const mainCanvas = document.getElementById('mainCanvas');
@@ -322,10 +330,11 @@
         const sizeReadout = document.getElementById('sizeReadout');
         const zoomRange = document.getElementById('zoom');
         const zoomVal = document.getElementById('zoomVal');
-        const showGrid = document.getElementById('showGrid');
         const fillShapes = document.getElementById('fillShapes');
         const exportBtn = document.getElementById('exportBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const strokeWidthSlider = document.getElementById('strokeWidth');
+        const strokeWidthVal = document.getElementById('strokeWidthVal');
 
         let state = {
             tool: 'pencil',
@@ -334,40 +343,42 @@
             zoom: Number(zoomRange.value),
             drawing: false,
             start: null,
-            imgData: null // ImageData for main canvas
+            imgData: null,
+            strokeWidth: Number(strokeWidthSlider ? strokeWidthSlider.value : 1)
         };
 
         let undoStack = [];
         let redoStack = [];
 
-        // init canvas with default size
+        let lastTool = 'pencil'; // default
+
+        // stroke width UI
+        strokeWidthSlider.addEventListener('input', () => {
+            state.strokeWidth = Number(strokeWidthSlider.value);
+            strokeWidthVal.textContent = state.strokeWidth + ' px';
+        });
+        strokeWidthVal.textContent = state.strokeWidth + ' px';
+
         function initCanvas(size = DEFAULT_SIZE, keepImage = false) {
-            // set internal resolution
             mainCanvas.width = size;
             mainCanvas.height = size;
             overlayCanvas.width = size;
             overlayCanvas.height = size;
 
-            // style display to zoom
             const scale = state.zoom;
             mainCanvas.style.width = (size * scale) + 'px';
             mainCanvas.style.height = (size * scale) + 'px';
             overlayCanvas.style.width = (size * scale) + 'px';
             overlayCanvas.style.height = (size * scale) + 'px';
 
-            // set pixel-perfect rendering
             const ctx = mainCanvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
 
             if (!keepImage) {
-                // fill transparent / white background
                 ctx.clearRect(0, 0, size, size);
-                // initialize imgData
                 state.imgData = ctx.getImageData(0, 0, size, size);
             } else {
-                // keep existing data - ensure size matches
                 const newData = ctx.createImageData(size, size);
-                // copy overlapping region if possible
                 if (state.imgData) {
                     const old = state.imgData;
                     const minW = Math.min(old.width, newData.width);
@@ -387,10 +398,8 @@
                 ctx.putImageData(state.imgData, 0, 0);
             }
 
-            // overlay clear
             overlayCanvas.getContext('2d').clearRect(0, 0, size, size);
 
-            // grid toggle visual (draw on overlay)
             drawGridOverlay();
             updateReadout();
         }
@@ -401,6 +410,9 @@
         }
 
         function setTool(toolName) {
+            if (toolName !== 'eyedropper' && state.tool !== 'eyedropper') {
+                lastTool = state.tool;
+            }
             state.tool = toolName;
             toolButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tool === toolName));
             updateReadout();
@@ -425,9 +437,7 @@
         }
 
         function saveState() {
-            // Save a copy of the current image data
             undoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
-            // Clear redo stack
             redoStack = [];
         }
 
@@ -454,37 +464,30 @@
         document.getElementById('undoBtn').addEventListener('click', undo);
         document.getElementById('redoBtn').addEventListener('click', redo);
 
-        // Keyboard shortcuts
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo();
             if ((e.ctrlKey || e.metaKey) && e.key === 'y') redo();
         });
 
-        // event: color inputs
         colorPicker.addEventListener('input', e => setColor(e.target.value));
         hexInput.addEventListener('change', e => {
             let v = e.target.value.trim();
             if (!v.startsWith('#')) v = '#' + v;
-            // validate 3 or 6 hex
             if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
                 setColor(v);
             } else {
-                // revert
                 e.target.value = state.color;
             }
         });
 
-        // tool clicks
         toolButtons.forEach(btn => btn.addEventListener('click', () => setTool(btn.dataset.tool)));
 
         setTool('pencil');
         setColor('#000000');
 
-        // zoom control
         zoomRange.addEventListener('input', () => {
             state.zoom = Number(zoomRange.value);
             zoomVal.textContent = state.zoom + '×';
-            // update display size
             const s = mainCanvas.width;
             mainCanvas.style.width = (s * state.zoom) + 'px';
             mainCanvas.style.height = (s * state.zoom) + 'px';
@@ -493,19 +496,13 @@
             drawGridOverlay();
         });
 
-        // grid toggle
-        showGrid.addEventListener('change', drawGridOverlay);
-
-        // resize canvas
         resizeBtn.addEventListener('click', () => {
             const newSize = Math.max(5, Math.min(1024, Number(canvasSizeInput.value || DEFAULT_SIZE)));
             if (newSize === mainCanvas.width) return;
-            // Ask user to keep current drawing - but we must not ask per system instructions? The developer instructions said if unsure ask to browse; not relevant. We can prompt a confirm dialog (allowed).
             const keep = confirm('Keep current drawing contents where possible when resizing? Click Cancel to start fresh.');
             initCanvas(newSize, keep);
         });
 
-        // clear
         clearBtn.addEventListener('click', () => {
             if (confirm('Clear the canvas?')) {
                 const ctx = mainCanvas.getContext('2d');
@@ -515,19 +512,15 @@
             }
         });
 
-        // export
         exportBtn.addEventListener('click', () => {
-            // ask for export scale
             let scale = parseInt(prompt('Export scale (pixels per grid cell). 1 = exact size. For a larger image use e.g. 10.', '10'));
             if (isNaN(scale) || scale < 1) scale = 1;
-            // create temporary canvas
             const exportCanvas = document.createElement('canvas');
             exportCanvas.width = mainCanvas.width * scale;
             exportCanvas.height = mainCanvas.height * scale;
             const exCtx = exportCanvas.getContext('2d');
             exCtx.imageSmoothingEnabled = false;
 
-            // draw the pixel data scaled
             const tmp = document.createElement('canvas');
             tmp.width = mainCanvas.width;
             tmp.height = mainCanvas.height;
@@ -536,7 +529,6 @@
 
             exCtx.drawImage(tmp, 0, 0, exportCanvas.width, exportCanvas.height);
 
-            // download
             exportCanvas.toBlob(blob => {
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
@@ -547,7 +539,6 @@
             }, 'image/png');
         });
 
-        // coordinate helpers
         function getPointerPixel(e, canvas) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.clientX !== undefined ? e.clientX : e.touches && e.touches[0].clientX;
@@ -559,8 +550,8 @@
 
         function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-        // draw pixel directly to state.imgData and putImageData
         function setPixel(x, y, rgba) {
+            if (x < 0 || x >= state.imgData.width || y < 0 || y >= state.imgData.height) return;
             const idx = (y * state.imgData.width + x) * 4;
             state.imgData.data[idx] = rgba[0];
             state.imgData.data[idx + 1] = rgba[1];
@@ -583,16 +574,29 @@
             ctx.putImageData(state.imgData, 0, 0);
         }
 
-        // simple helpers for drawing shapes onto imgData
-        function drawLinePixels(x0, y0, x1, y1, colorRGBA) {
-            // Bresenham
+        // Draw a filled circle at (cx, cy) with radius, into imgData
+        function drawCirclePixels(cx, cy, radius, colorRGBA) {
+            const r2 = radius * radius;
+            const xMin = Math.floor(cx - radius), xMax = Math.ceil(cx + radius);
+            const yMin = Math.floor(cy - radius), yMax = Math.ceil(cy + radius);
+            for (let y = yMin; y <= yMax; y++) {
+                for (let x = xMin; x <= xMax; x++) {
+                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r2) {
+                        setPixel(x, y, colorRGBA);
+                    }
+                }
+            }
+        }
+
+        // Bresenham line, but draw a circle at each pixel for stroke width
+        function drawLinePixels(x0, y0, x1, y1, colorRGBA, strokeWidth = 1) {
             let dx = Math.abs(x1 - x0);
             let sx = x0 < x1 ? 1 : -1;
             let dy = -Math.abs(y1 - y0);
             let sy = y0 < y1 ? 1 : -1;
             let err = dx + dy;
             while (true) {
-                setPixel(x0, y0, colorRGBA);
+                drawCirclePixels(x0, y0, strokeWidth / 2, colorRGBA);
                 if (x0 === x1 && y0 === y1) break;
                 let e2 = 2 * err;
                 if (e2 >= dy) { err += dy; x0 += sx; }
@@ -600,24 +604,33 @@
             }
         }
 
-        function drawRectPixels(x0, y0, x1, y1, colorRGBA, filled = true) {
+        // Draw filled or bordered rectangle with borderWidth
+        function drawRectPixels(x0, y0, x1, y1, colorRGBA, filled = true, borderWidth = 1) {
             const xMin = Math.min(x0, x1), xMax = Math.max(x0, x1);
             const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
             if (filled) {
                 for (let y = yMin; y <= yMax; y++) {
-                    let base = (y * state.imgData.width + xMin) * 4;
                     for (let x = xMin; x <= xMax; x++) {
                         setPixel(x, y, colorRGBA);
                     }
                 }
             } else {
-                for (let x = xMin; x <= xMax; x++) { setPixel(x, yMin, colorRGBA); setPixel(x, yMax, colorRGBA); }
-                for (let y = yMin; y <= yMax; y++) { setPixel(xMin, y, colorRGBA); setPixel(xMax, y, colorRGBA); }
+                // Draw border of thickness borderWidth
+                for (let w = 0; w < borderWidth; w++) {
+                    // Top
+                    for (let x = xMin + w; x <= xMax - w; x++) setPixel(x, yMin + w, colorRGBA);
+                    // Bottom
+                    for (let x = xMin + w; x <= xMax - w; x++) setPixel(x, yMax - w, colorRGBA);
+                    // Left
+                    for (let y = yMin + w; y <= yMax - w; y++) setPixel(xMin + w, y, colorRGBA);
+                    // Right
+                    for (let y = yMin + w; y <= yMax - w; y++) setPixel(xMax - w, y, colorRGBA);
+                }
             }
         }
 
-        function drawEllipsePixels(x0, y0, x1, y1, colorRGBA, filled = true) {
-            // midpoint ellipse approximation scaled to pixel grid
+        // Draw filled or bordered ellipse with borderWidth
+        function drawEllipsePixels(x0, y0, x1, y1, colorRGBA, filled = true, borderWidth = 1) {
             const cx = (x0 + x1) / 2;
             const cy = (y0 + y1) / 2;
             const rx = Math.abs(x1 - x0) / 2;
@@ -626,29 +639,40 @@
                 setPixel(Math.round(cx), Math.round(cy), colorRGBA);
                 return;
             }
-            // iterate bounding box and test ellipse equation (cheap, fine for 300x300)
             const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
             const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
             const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
-            for (let y = yMin; y <= yMax; y++) {
-                for (let x = xMin; x <= xMax; x++) {
-                    const dx = (x - cx), dy = (y - cy);
-                    const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                    if (filled) {
+
+            if (filled) {
+                for (let y = yMin; y <= yMax; y++) {
+                    for (let x = xMin; x <= xMax; x++) {
+                        const dx = (x - cx), dy = (y - cy);
+                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
                         if (val <= 1) setPixel(x, y, colorRGBA);
-                    } else {
-                        // outline: check if within small band near 1
-                        if (Math.abs(val - 1) <= 0.7 / Math.max(rx, ry)) setPixel(x, y, colorRGBA);
+                    }
+                }
+            } else {
+                // Border: draw pixels where val is within the band corresponding to borderWidth
+                // The thickness in radius for borderWidth is: borderWidth/2 inwards, borderWidth/2 outwards
+                // Since val = 1 is the edge, we want val in [1 - inner, 1 + outer]
+                // Approximate pixel width band for val:
+                // Use bandWidth = borderWidth / Math.max(rx, ry)
+                const bandWidth = borderWidth / Math.max(rx, ry);
+                for (let y = yMin; y <= yMax; y++) {
+                    for (let x = xMin; x <= xMax; x++) {
+                        const dx = (x - cx), dy = (y - cy);
+                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
+                        if (Math.abs(val - 1) <= bandWidth / 2) {
+                            setPixel(x, y, colorRGBA);
+                        }
                     }
                 }
             }
         }
 
-        // flood fill (stack-based)
         function floodFill(sx, sy, targetRGBA, replacementRGBA) {
             const w = state.imgData.width, h = state.imgData.height;
             if (targetRGBA[0] === replacementRGBA[0] && targetRGBA[1] === replacementRGBA[1] && targetRGBA[2] === replacementRGBA[2] && targetRGBA[3] === replacementRGBA[3]) return;
-            // compare function
             function same(x, y, rgba) {
                 const p = getPixelRGBA(x, y);
                 return p[0] === rgba[0] && p[1] === rgba[1] && p[2] === rgba[2] && p[3] === rgba[3];
@@ -663,21 +687,22 @@
             }
         }
 
-        // overlay (preview) canvas drawing (cleared between operations)
         function clearOverlay() { overlayCanvas.getContext('2d').clearRect(0, 0, overlayCanvas.width, overlayCanvas.height); }
 
-        function drawOverlayLine(x0, y0, x1, y1) {
+        // Overlay previews. They use 1px wide always for visual preview.
+        function drawOverlayLine(x0, y0, x1, y1, strokeWidth = 1) {
             const ctx = overlayCanvas.getContext('2d');
             ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             ctx.fillStyle = hexToCSS(state.color);
-            // draw using same bresenham but onto overlay data (use 1x1 rects)
+
             let dx = Math.abs(x1 - x0);
             let sx = x0 < x1 ? 1 : -1;
             let dy = -Math.abs(y1 - y0);
             let sy = y0 < y1 ? 1 : -1;
             let err = dx + dy;
             while (true) {
-                ctx.fillRect(x0, y0, 1, 1);
+                // Draw a filled circle for the preview
+                drawOverlayCircle(ctx, x0, y0, strokeWidth / 2);
                 if (x0 === x1 && y0 === y1) break;
                 let e2 = 2 * err;
                 if (e2 >= dy) { err += dy; x0 += sx; }
@@ -685,7 +710,14 @@
             }
         }
 
-        function drawOverlayRect(x0, y0, x1, y1, filled) {
+        // Helper for drawing a filled circle on overlay
+        function drawOverlayCircle(ctx, cx, cy, radius) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function drawOverlayRect(x0, y0, x1, y1, filled, borderWidth = 1) {
             const ctx = overlayCanvas.getContext('2d');
             ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             ctx.fillStyle = hexToCSS(state.color);
@@ -693,18 +725,23 @@
             const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
             if (filled) ctx.fillRect(xMin, yMin, xMax - xMin + 1, yMax - yMin + 1);
             else {
-                ctx.fillRect(xMin, yMin, xMax - xMin + 1, 1);
-                ctx.fillRect(xMin, yMax, xMax - xMin + 1, 1);
-                ctx.fillRect(xMin, yMin, 1, yMax - yMin + 1);
-                ctx.fillRect(xMax, yMin, 1, yMax - yMin + 1);
+                for (let w = 0; w < borderWidth; w++) {
+                    // Top
+                    ctx.fillRect(xMin + w, yMin + w, xMax - xMin + 1 - 2 * w, 1);
+                    // Bottom
+                    ctx.fillRect(xMin + w, yMax - w, xMax - xMin + 1 - 2 * w, 1);
+                    // Left
+                    ctx.fillRect(xMin + w, yMin + w, 1, yMax - yMin + 1 - 2 * w);
+                    // Right
+                    ctx.fillRect(xMax - w, yMin + w, 1, yMax - yMin + 1 - 2 * w);
+                }
             }
         }
 
-        function drawOverlayOval(x0, y0, x1, y1, filled) {
+        function drawOverlayOval(x0, y0, x1, y1, filled, borderWidth = 1) {
             const ctx = overlayCanvas.getContext('2d');
             ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             ctx.fillStyle = hexToCSS(state.color);
-            // simple bounding box test like in drawEllipsePixels
             const cx = (x0 + x1) / 2;
             const cy = (y0 + y1) / 2;
             const rx = Math.abs(x1 - x0) / 2;
@@ -716,29 +753,33 @@
             const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
             const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
             const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
-            for (let y = yMin; y <= yMax; y++) {
-                for (let x = xMin; x <= xMax; x++) {
-                    const dx = (x - cx), dy = (y - cy);
-                    const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                    if (filled) {
+            if (filled) {
+                for (let y = yMin; y <= yMax; y++) {
+                    for (let x = xMin; x <= xMax; x++) {
+                        const dx = (x - cx), dy = (y - cy);
+                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
                         if (val <= 1) ctx.fillRect(x, y, 1, 1);
-                    } else {
-                        if (Math.abs(val - 1) <= 0.7 / Math.max(rx, ry)) ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            } else {
+                const bandWidth = borderWidth / Math.max(rx, ry);
+                for (let y = yMin; y <= yMax; y++) {
+                    for (let x = xMin; x <= xMax; x++) {
+                        const dx = (x - cx), dy = (y - cy);
+                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
+                        if (Math.abs(val - 1) <= bandWidth / 2) ctx.fillRect(x, y, 1, 1);
                     }
                 }
             }
         }
 
         function hexToCSS(hex) {
-            // css color string for overlay (full opacity)
             return hex;
         }
 
-        // draw grid lines onto overlay canvas (visible if checked)
         function drawGridOverlay() {
             const ctx = overlayCanvas.getContext('2d');
             ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            if (!showGrid.checked) return;
             const w = overlayCanvas.width, h = overlayCanvas.height;
             ctx.strokeStyle = 'rgba(0,0,0,0.08)';
             ctx.lineWidth = 0.03;
@@ -750,10 +791,8 @@
                 ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5);
             }
             ctx.stroke();
-            // keep overlay transparent but grid visible; overlay will be used also for previews.
         }
 
-        // painting logic
         let lastPos = null;
 
         function onPointerDown(e) {
@@ -769,12 +808,12 @@
 
             if (state.tool === 'pencil') {
                 const rgba = hexToRGBA(state.color);
-                setPixel(p.x, p.y, rgba);
+                drawCirclePixels(p.x, p.y, state.strokeWidth / 2, rgba);
                 redrawMain();
             } else if (state.tool === 'eraser') {
                 const rgba = [0, 0, 0, 0];
-                setPixel(p.x, p.y, rgba);
-                redrawMain;
+                drawCirclePixels(p.x, p.y, state.strokeWidth / 2, rgba);
+                redrawMain();
             } else if (state.tool === 'fill') {
                 const target = getPixelRGBA(p.x, p.y);
                 const replacement = hexToRGBA(state.color);
@@ -784,12 +823,13 @@
                 const picked = getPixelRGBA(p.x, p.y);
                 const hex = rgbaToHex(picked[0], picked[1], picked[2]);
                 setColor(hex);
+                // switch to previous tool
+                setTool(lastTool);
             } else {
-                // start shape preview
                 clearOverlay();
                 if (state.tool === 'line') drawOverlayLine(p.x, p.y, p.x, p.y);
-                if (state.tool === 'rect') drawOverlayRect(p.x, p.y, p.x, p.y, fillShapes.checked);
-                if (state.tool === 'oval') drawOverlayOval(p.x, p.y, p.x, p.y, fillShapes.checked);
+                if (state.tool === 'rect') drawOverlayRect(p.x, p.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
+                if (state.tool === 'oval') drawOverlayOval(p.x, p.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
             }
         }
 
@@ -798,21 +838,20 @@
             const p = getPointerPixel(e, mainCanvas);
             if (state.tool === 'pencil') {
                 const rgba = hexToRGBA(state.color);
-                // draw line between lastPos and p to avoid gaps when moving fast
-                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba);
+                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba, state.strokeWidth);
                 lastPos = { x: p.x, y: p.y };
                 redrawMain();
             } else if (state.tool === 'eraser') {
-                const rgba = [0, 0, 0, 0]
-                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba);
+                const rgba = [0, 0, 0, 0];
+                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba, state.strokeWidth);
                 lastPos = { x: p.x, y: p.y };
                 redrawMain();
             } else if (state.tool === 'line') {
-                drawOverlayLine(state.start.x, state.start.y, p.x, p.y);
+                drawOverlayLine(state.start.x, state.start.y, p.x, p.y, state.strokeWidth);
             } else if (state.tool === 'rect') {
-                drawOverlayRect(state.start.x, state.start.y, p.x, p.y, fillShapes.checked);
+                drawOverlayRect(state.start.x, state.start.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
             } else if (state.tool === 'oval') {
-                drawOverlayOval(state.start.x, state.start.y, p.x, p.y, fillShapes.checked);
+                drawOverlayOval(state.start.x, state.start.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
             }
         }
 
@@ -822,35 +861,42 @@
             const p = getPointerPixel(e, mainCanvas);
             if (state.tool === 'pencil') {
                 // already drawn as we moved
+            } else if (state.tool === 'eraser') {
+                // already drawn as we moved
             } else if (state.tool === 'line') {
                 const rgba = hexToRGBA(state.color);
-                drawLinePixels(state.start.x, state.start.y, p.x, p.y, rgba);
+                drawLinePixels(state.start.x, state.start.y, p.x, p.y, rgba, state.strokeWidth);
                 redrawMain();
                 clearOverlay();
             } else if (state.tool === 'rect') {
                 const rgba = hexToRGBA(state.color);
-                drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, fillShapes.checked);
+                if (fillShapes.checked) {
+                    drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, true, 1);
+                } else {
+                    drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, false, state.strokeWidth);
+                }
                 redrawMain();
                 clearOverlay();
             } else if (state.tool === 'oval') {
                 const rgba = hexToRGBA(state.color);
-                drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, fillShapes.checked);
+                if (fillShapes.checked) {
+                    drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, true, 1);
+                } else {
+                    drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, false, state.strokeWidth);
+                }
                 redrawMain();
                 clearOverlay();
             }
         }
 
-        // attach pointer events (support touch)
         mainCanvas.addEventListener('pointerdown', onPointerDown);
         mainCanvas.addEventListener('pointermove', onPointerMove);
         window.addEventListener('pointerup', onPointerUp);
 
-        // also allow overlay to capture pointer for preview interactions
         overlayCanvas.addEventListener('pointerdown', onPointerDown);
         overlayCanvas.addEventListener('pointermove', onPointerMove);
         overlayCanvas.addEventListener('pointerup', onPointerUp);
 
-        // keyboard shortcuts
         window.addEventListener('keydown', (e) => {
             if (e.key === 'p' || e.key === 'P') setTool('pencil');
             if (e.key === 'l' || e.key === 'L') setTool('line');
@@ -860,22 +906,8 @@
             if (e.key === 'i' || e.key === 'I') setTool('eyedropper');
         });
 
-        // initialize
         initCanvas(DEFAULT_SIZE);
 
-        // small helpers for hex <-> rgba conversions
-        function hexToRGBA(hex) {
-            hex = hex.replace('#', '');
-            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-            const n = parseInt(hex, 16);
-            return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
-        }
-
-        function rgbaToHex(r, g, b) {
-            return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-        }
-
-        // initial UI sync
         canvasSizeInput.value = DEFAULT_SIZE;
         zoomVal.textContent = state.zoom + '×';
         drawGridOverlay();
