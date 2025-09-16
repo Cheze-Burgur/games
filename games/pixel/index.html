@@ -234,6 +234,9 @@
                 <div class="tool" data-tool="oval">Oval</div>
                 <div class="tool" data-tool="fill">Fill</div>
                 <div class="tool" data-tool="eyedropper">Eyedropper</div>
+                <button id="exportBtn">Export as PNG</button>
+                <button id="clearBtn" class="secondary">Clear</button>
+                <div class="hint">Export produces a crisp PNG (no smoothing).</div>
             </div>
 
             <div class="control">
@@ -259,8 +262,9 @@
 
             <div class="control">
                 <label>Zoom / Display scale</label>
-                <input id="zoom" type="range" min="2" max="20" value="2" step="0.5"/>
+                <input id="zoom" type="range" min="2" max="20" value="2" step="0.5" />
                 <div class="small">Zoom: <span id="zoomVal">2×</span></div>
+                <div class="hint">Use zoom to preview larger pixels.</div>
                 <label style="margin-top:8px"><input type="checkbox" id="showGrid" checked /> Show grid lines</label>
             </div>
 
@@ -271,25 +275,9 @@
                 </div>
             </div>
 
-            <div class="control">
-                <label>Export</label>
-                <div class="btn-row">
-                    <button id="exportBtn">Save / Export PNG</button>
-                    <button id="clearBtn" class="secondary">Clear</button>
-                </div>
-                <div class="hint">Export produces a crisp PNG (no smoothing). Use zoom to preview larger pixels.</div>
-            </div>
-
             <div class="tool-legend">
-                <strong>Tool quick keys:</strong>
-                <ul style="list-style-type: square;">
-                    <li>P = Pencil</li>
-                    <li>L = Line</li>
-                    <li>R = Rectangle</li>
-                    <li>O = Oval</li>
-                    <li>F = Fill</li>
-                    <li>I = Eyedropper</li>
-                </ul>
+                <strong>Tool quick keys:</strong> P = Pencil, L = Line,<br>R = Rectangle, O = Oval, F = Fill,<br>I =
+                Eyedropper
             </div>
 
         </aside>
