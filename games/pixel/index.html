@@ -256,10 +256,10 @@
             <div class="control">
                 <label>Canvas size (pixels)</label>
                 <div class="row">
-                    <input type="number" id="canvasSize" min="8" max="1024" step="1" value="300" />
+                    <input type="number" id="canvasSize" min="5" max="1024" step="1" value="250" />
                     <button id="resizeBtn" class="secondary">Resize</button>
                 </div>
-                <div class="hint">Changing size recreates the canvas (option to keep current drawing will be asked).
+                <div class="hint">Changing size recreates the canvas.
                 </div>
             </div>
 
@@ -308,7 +308,7 @@
            - Tools: pencil, line (bresenham), rect, oval, fill (flood), eyedropper
         */
 
-        const DEFAULT_SIZE = 300;
+        const DEFAULT_SIZE = 250;
 
         const mainCanvas = document.getElementById('mainCanvas');
         const overlayCanvas = document.getElementById('overlayCanvas');
@@ -498,7 +498,7 @@
 
         // resize canvas
         resizeBtn.addEventListener('click', () => {
-            const newSize = Math.max(8, Math.min(1024, Number(canvasSizeInput.value || DEFAULT_SIZE)));
+            const newSize = Math.max(5, Math.min(1024, Number(canvasSizeInput.value || DEFAULT_SIZE)));
             if (newSize === mainCanvas.width) return;
             // Ask user to keep current drawing - but we must not ask per system instructions? The developer instructions said if unsure ask to browse; not relevant. We can prompt a confirm dialog (allowed).
             const keep = confirm('Keep current drawing contents where possible when resizing? Click Cancel to start fresh.');
