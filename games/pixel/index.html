@@ -427,7 +427,8 @@
         }
 
         function setTool(toolName) {
-            if (toolName !== 'eyedropper' && state.tool !== 'eyedropper') {
+            // Remember previous tool only when switching TO eyedropper
+            if (toolName === 'eyedropper' && state.tool !== 'eyedropper') {
                 lastTool = state.tool;
             }
             state.tool = toolName;
