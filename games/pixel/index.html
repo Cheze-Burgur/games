@@ -216,7 +216,8 @@
         .hint {
             font-size: 0.8rem;
             color: rgba(245, 222, 179, 0.9);
-            margin-top: 6px
+            margin-top: 6px;
+            margin-bottom: 6px;
         }
     </style>
 </head>
@@ -266,36 +267,41 @@
 
             <div class="control">
                 <label>Canvas size (pixels)</label>
-                <div class="row">
-                    <input type="number" id="canvasSize" min="5" max="1024" step="1" value="250" />
-                    <button id="resizeBtn" class="secondary">Resize</button>
-                </div>
                 <div class="hint">Changing size recreates the canvas.
                 </div>
-            </div>
+                <div class="row">
+                    <div class="row">
+                        <input type="number" id="canvasWidth" min="5" max="1024" step="1" value="250"
+                            style="width:60px;" />
+                        <span>×</span>
+                        <input type="number" id="canvasHeight" min="5" max="1024" step="1" value="250"
+                            style="width:60px;" />
+                        <button id="resizeBtn" class="secondary">Resize</button>
+                    </div>
+                </div>
 
-            <div class="control">
-                <label>Zoom / Display scale</label>
-                <input id="zoom" type="range" min="2" max="20" value="3" step="0.25" />
-                <div class="small">Zoom: <span id="zoomVal">3×</span></div>
-                <div class="hint">Use zoom to preview larger pixels.</div>
-            </div>
-
-            <div class="control">
                 <div class="control">
-                    <label>Stroke Width</label>
-                    <input id="strokeWidth" type="range" min="1" max="30" value="1" />
-                    <div class="small">Width: <span id="strokeWidthVal">1 px</span></div>
-                    <div class="hint">Controls the thickness for pencil, eraser, line, and shape borders.</div>
+                    <label>Zoom / Display scale</label>
+                    <input id="zoom" type="range" min="2" max="20" value="3" step="0.25" />
+                    <div class="small">Zoom: <span id="zoomVal">3×</span></div>
+                    <div class="hint">Use zoom to preview larger pixels.</div>
                 </div>
-                <div class="filled-toggle">
-                    <label><input type="checkbox" id="fillShapes" checked /> Filled shapes</label>
-                </div>
-            </div>
 
-            <div class="tool-legend">
-                <strong>Shortcuts:</strong> P = Pencil, L = Line, R = Rectangle, O = Oval, F = Fill, I = Eyedropper
-            </div>
+                <div class="control">
+                    <div class="control">
+                        <label>Stroke Width</label>
+                        <input id="strokeWidth" type="range" min="1" max="30" value="1" />
+                        <div class="small">Width: <span id="strokeWidthVal">1 px</span></div>
+                        <div class="hint">Controls the thickness for pencil, eraser, line, and shape borders.</div>
+                    </div>
+                    <div class="filled-toggle">
+                        <label><input type="checkbox" id="fillShapes" checked /> Filled shapes</label>
+                    </div>
+                </div>
+
+                <div class="tool-legend">
+                    <strong>Shortcuts:</strong> P = Pencil, L = Line, R = Rectangle, O = Oval, F = Fill, I = Eyedropper
+                </div>
 
         </aside>
 
@@ -323,7 +329,8 @@
         const colorPicker = document.getElementById('colorPicker');
         const hexInput = document.getElementById('hexInput');
         const swatch = document.getElementById('swatch');
-        const canvasSizeInput = document.getElementById('canvasSize');
+        const canvasWidthInput = document.getElementById('canvasWidth');
+        const canvasHeightInput = document.getElementById('canvasHeight');
         const resizeBtn = document.getElementById('resizeBtn');
         const toolButtons = document.querySelectorAll('.tool');
         const activeToolLabel = document.getElementById('activeTool');
@@ -339,7 +346,8 @@
         let state = {
             tool: 'pencil',
             color: '#000000',
-            size: DEFAULT_SIZE,
+            width: DEFAULT_SIZE,
+            height: DEFAULT_SIZE,
             zoom: Number(zoomRange.value),
             drawing: false,
             start: null,
@@ -359,26 +367,35 @@
         });
         strokeWidthVal.textContent = state.strokeWidth + ' px';
 
-        function initCanvas(size = DEFAULT_SIZE, keepImage = false) {
-            mainCanvas.width = size;
-            mainCanvas.height = size;
-            overlayCanvas.width = size;
-            overlayCanvas.height = size;
+        canvasWidthInput.value = DEFAULT_SIZE;
+        canvasHeightInput.value = DEFAULT_SIZE;
+        zoomVal.textContent = state.zoom + '×';
+
+        initCanvas(DEFAULT_SIZE, DEFAULT_SIZE);
+
+        function initCanvas(width = DEFAULT_SIZE, height = DEFAULT_SIZE, keepImage = false) {
+            mainCanvas.width = width;
+            mainCanvas.height = height;
+            overlayCanvas.width = width;
+            overlayCanvas.height = height;
+
+            state.width = width;
+            state.height = height;
 
             const scale = state.zoom;
-            mainCanvas.style.width = (size * scale) + 'px';
-            mainCanvas.style.height = (size * scale) + 'px';
-            overlayCanvas.style.width = (size * scale) + 'px';
-            overlayCanvas.style.height = (size * scale) + 'px';
+            mainCanvas.style.width = (width * scale) + 'px';
+            mainCanvas.style.height = (height * scale) + 'px';
+            overlayCanvas.style.width = (width * scale) + 'px';
+            overlayCanvas.style.height = (height * scale) + 'px';
 
             const ctx = mainCanvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
 
             if (!keepImage) {
-                ctx.clearRect(0, 0, size, size);
-                state.imgData = ctx.getImageData(0, 0, size, size);
+                ctx.clearRect(0, 0, width, height);
+                state.imgData = ctx.getImageData(0, 0, width, height);
             } else {
-                const newData = ctx.createImageData(size, size);
+                const newData = ctx.createImageData(width, height);
                 if (state.imgData) {
                     const old = state.imgData;
                     const minW = Math.min(old.width, newData.width);
@@ -398,7 +415,7 @@
                 ctx.putImageData(state.imgData, 0, 0);
             }
 
-            overlayCanvas.getContext('2d').clearRect(0, 0, size, size);
+            overlayCanvas.getContext('2d').clearRect(0, 0, width, height);
 
             drawGridOverlay();
             updateReadout();
@@ -488,19 +505,21 @@
         zoomRange.addEventListener('input', () => {
             state.zoom = Number(zoomRange.value);
             zoomVal.textContent = state.zoom + '×';
-            const s = mainCanvas.width;
-            mainCanvas.style.width = (s * state.zoom) + 'px';
-            mainCanvas.style.height = (s * state.zoom) + 'px';
-            overlayCanvas.style.width = (s * state.zoom) + 'px';
-            overlayCanvas.style.height = (s * state.zoom) + 'px';
+            mainCanvas.style.width = (mainCanvas.width * state.zoom) + 'px';
+            mainCanvas.style.height = (mainCanvas.height * state.zoom) + 'px';
+            overlayCanvas.style.width = (overlayCanvas.width * state.zoom) + 'px';
+            overlayCanvas.style.height = (overlayCanvas.height * state.zoom) + 'px';
             drawGridOverlay();
         });
 
         resizeBtn.addEventListener('click', () => {
-            const newSize = Math.max(5, Math.min(1024, Number(canvasSizeInput.value || DEFAULT_SIZE)));
-            if (newSize === mainCanvas.width) return;
+            const newWidth = Math.max(5, Math.min(1024, Number(canvasWidthInput.value || DEFAULT_SIZE)));
+            const newHeight = Math.max(5, Math.min(1024, Number(canvasHeightInput.value || DEFAULT_SIZE)));
+            if (newWidth === mainCanvas.width && newHeight === mainCanvas.height) return;
             const keep = confirm('Keep current drawing contents where possible when resizing? Click Cancel to start fresh.');
-            initCanvas(newSize, keep);
+            initCanvas(newWidth, newHeight, keep);
+            state.width = newWidth;
+            state.height = newHeight;
         });
 
         clearBtn.addEventListener('click', () => {
@@ -701,7 +720,6 @@
             let sy = y0 < y1 ? 1 : -1;
             let err = dx + dy;
             while (true) {
-                // Draw a filled circle for the preview
                 drawOverlayCircle(ctx, x0, y0, strokeWidth / 2);
                 if (x0 === x1 && y0 === y1) break;
                 let e2 = 2 * err;
@@ -906,14 +924,7 @@
             if (e.key === 'i' || e.key === 'I') setTool('eyedropper');
         });
 
-        initCanvas(DEFAULT_SIZE);
-
-        canvasSizeInput.value = DEFAULT_SIZE;
-        zoomVal.textContent = state.zoom + '×';
-        drawGridOverlay();
-
         function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
     </script>
 </body>
 
