@@ -141,6 +141,10 @@
             text-decoration-style: dashed;
         }
 
+        strong {
+            color: var(--mutedAccent)
+        }
+
         /* block look */
         .cell-outline {
             stroke: rgba(0, 0, 0, 0.6);
@@ -206,27 +210,31 @@
                         <div class="big" id="lines">0</div>
                     </div>
                 </div>
+                <div class="panel" id="hiscoresPanel">
+                    <h3>HIGHSCORES</h3>
+                    <ol id="hiscoresList" style="font-size:9px; line-height:1.6; margin:0; padding-left:18px;"></ol>
+                </div>
             </div>
 
             <div class="panel controls">
                 <h3>CONTROLS</h3>
                 <div>
-                    < > : Move
+                    <strong>< ></strong> / <strong>A D</strong> : Move
                 </div>
                 <div>
-                    Up / Z : Rotate
+                    <strong>Q W</strong> / <strong>? Up</strong> : Rotate
                 </div>
                 <div>
-                    Down : Soft drop
+                    <strong>Down</strong> : Soft drop
                 </div>
                 <div>
-                    Space : Hard drop
+                    <strong>Space</strong> : Hard drop
                 </div>
                 <div>
-                    C : Hold
+                    <strong>C</strong> : Hold
                 </div>
                 <div>
-                    P : Pause
+                    <strong>P</strong> : Pause
                 </div>
             </div>
 
@@ -313,6 +321,7 @@
         let lastDrop = 0;
         let running = false;
         let paused = false;
+        let highscores = [];
 
         /* create empty grid */
         function makeGrid() {
@@ -400,7 +409,15 @@
                 running = false;
                 // lock to top to show game over visually
                 draw();
-                setTimeout(() => { alert('GAME OVER\\nScore: ' + score); }, 50);
+                setTimeout(() => {
+                    highscores.push(score);
+                    highscores.sort((a, b) => b - a);   // descending
+                    if (highscores.length > 5) highscores.length = 5; // keep top 5
+                    saveHighscores();
+                    updateHighscoreList();
+
+                    alert('GAME OVER\nScore: ' + score);
+                }, 50);
             }
             canHold = true;
             drawNext();
@@ -626,6 +643,27 @@
             drawPreview(hctx, holdPiece);
         }
 
+        /* highscore management */
+        function loadHighscores() {
+            const data = localStorage.getItem('tetrisHighscores');
+            highscores = data ? JSON.parse(data) : [];
+            updateHighscoreList();
+        }
+
+        function saveHighscores() {
+            localStorage.setItem('tetrisHighscores', JSON.stringify(highscores));
+        }
+
+        function updateHighscoreList() {
+            const list = document.getElementById('hiscoresList');
+            list.innerHTML = '';
+            highscores.forEach((s, i) => {
+                const li = document.createElement('li');
+                li.textContent = s;
+                list.appendChild(li);
+            });
+        }
+
         /* main loop */
         function loop(now) {
             if (!running) return;
@@ -657,13 +695,12 @@
                 return;
             }
             switch (e.key) {
-                case 'ArrowLeft': move(-1); draw(); break;
-                case 'ArrowRight': move(1); draw(); break;
-                case 'ArrowUp': rotatePiece(1); draw(); break;
-                case 'z': case 'Z': rotatePiece(-1); draw(); break;
-                case 'x': case 'X': rotatePiece(1); draw(); break;
+                case 'ArrowLeft': case 'a': case 'A': move(-1); draw(); break;
+                case 'ArrowRight': case 'd': case 'D': move(1); draw(); break;
+                case 'ArrowUp': case 'w': case 'W': rotatePiece(1); draw(); break;
+                case '?': case 'q': case 'Q': rotatePiece(-1); draw(); break;
                 case ' ': e.preventDefault(); hardDrop(); break;
-                case 'ArrowDown': softDrop(); draw(); break;
+                case 'ArrowDown': case 's': case 'S': softDrop(); draw(); break;
                 case 'c': case 'C': hold(); break;
                 case 'p': case 'P': togglePause(); break;
             }
@@ -715,7 +752,15 @@
             if (collision(current)) {
                 running = false;
                 draw();
-                setTimeout(() => { alert('GAME OVER\\nScore: ' + score); }, 50);
+                setTimeout(() => {
+                    highscores.push(score);
+                    highscores.sort((a, b) => b - a);   // descending
+                    if (highscores.length > 5) highscores.length = 5; // keep top 5
+                    saveHighscores();
+                    updateHighscoreList();
+
+                    alert('GAME OVER\nScore: ' + score);
+                }, 50);
             }
             canHold = true;
             drawNext();
@@ -740,6 +785,8 @@
             container.style.position = 'relative';
             container.appendChild(overlay);
         })();
+
+        loadHighscores();
     </script>
 </body>
 
