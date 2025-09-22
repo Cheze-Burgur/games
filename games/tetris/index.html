@@ -15,6 +15,7 @@
             --panel: #0f2233;
             --accent: #ffb86b;
             --muted: #6ea0c7;
+            --mutedAccent: #bd6201;
             --glass: rgba(255, 255, 255, 0.03);
         }
 
@@ -75,7 +76,7 @@
         .panel h3 {
             margin: 0 0 10px 0;
             font-size: 10px;
-            color: var(--muted);
+            color: var(--accent);
             letter-spacing: 1px;
         }
 
@@ -87,7 +88,7 @@
 
         .big {
             font-size: 14px;
-            color: #dff6ff;
+            color: var(--mutedAccent);
         }
 
         button.action {
@@ -127,7 +128,17 @@
             text-align: center;
             margin-top: 18px;
             font-size: 10px;
-            color: var(--muted);
+            color: var(--mutedAccent);
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+            text-decoration-style: dashed;
         }
 
         /* block look */
@@ -183,16 +194,16 @@
                 <h3>STATS</h3>
                 <div class="numbers">
                     <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">SCORE</div>
                         <div class="big" id="score">0</div>
-                        <div style="font-size:8px;color:var(--muted);margin-top:6px;">SCORE</div>
                     </div>
                     <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">LEVEL</div>
                         <div class="big" id="level">1</div>
-                        <div style="font-size:8px;color:var(--muted);margin-top:6px;">LEVEL</div>
                     </div>
                     <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">LINES</div>
                         <div class="big" id="lines">0</div>
-                        <div style="font-size:8px;color:var(--muted);margin-top:6px;">LINES</div>
                     </div>
                 </div>
             </div>
@@ -203,10 +214,10 @@
                     < > : Move
                 </div>
                 <div>
-                    ^ / Z : Rotate
+                    Up / Z : Rotate
                 </div>
                 <div>
-                    V : Soft drop
+                    Down : Soft drop
                 </div>
                 <div>
                     Space : Hard drop
@@ -219,7 +230,7 @@
                 </div>
             </div>
 
-            <div class="footer">Tetris • Made by ©Cheze</div>
+            <div class="footer">Tetris • Made by <a href="https://github.com/Cheze-Burgur">©Cheze</a></div>
         </div>
     </div>
 
