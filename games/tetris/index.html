@@ -160,7 +160,7 @@
 <body>
     <div class="wrap">
         <div class="board-card">
-            <canvas id="board" width="240" height="480"></canvas>
+            <canvas id="board" width="300" height="600"></canvas>
             <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
                 <button id="startBtn" class="action">START</button>
                 <button id="pauseBtn" class="action">PAUSE</button>
@@ -228,11 +228,11 @@
            TETROMINO DEFINITIONS
            ---------------------- */
         const COLS = 10, ROWS = 20;
-        const BLOCK = 24; // pixel size of one block (canvas scaled accordingly)
+        const BLOCK = 30; // pixel size of one block (canvas scaled accordingly)
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
-        canvas.style.width = (COLS * (BLOCK / 2)) + 'px';
-        canvas.style.height = (ROWS * (BLOCK / 2)) + 'px';
+        canvas.style.width = (COLS * BLOCK) + 'px';
+        canvas.style.height = (ROWS * BLOCK) + 'px';
         ctx.imageSmoothingEnabled = false;
 
         /* small canvases */
