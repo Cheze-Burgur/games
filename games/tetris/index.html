@@ -188,7 +188,8 @@
 
         <div class="side">
 
-            <div class="header"><strong>Tetris</strong> • Made by <a href="https://github.com/Cheze-Burgur"><strong style="color:var(--accent)">©Cheze</strong></a></div>
+            <div class="header"><strong>Tetris</strong> • Made by <a href="https://github.com/Cheze-Burgur"><strong
+                        style="color:var(--accent)">©Cheze</strong></a></div>
 
             <div class="panel">
                 <h3>NEXT</h3>
@@ -230,7 +231,7 @@
                     </strong> / <strong>A D</strong> : Move
                 </div>
                 <div>
-                    <strong>Q W</strong> / <strong>? Up</strong> : Rotate
+                    <strong>W</strong> / <strong>^</strong> : Rotate
                 </div>
                 <div>
                     <strong>Down</strong> : Soft drop
@@ -695,7 +696,12 @@
 
         /* input handling */
         document.addEventListener('keydown', (e) => {
-            if (!running) return;
+            if (!running) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    startGame();
+                }
+                return;
+            }
             if (e.repeat) {
                 // allow repeated soft drop
                 if (e.key === 'ArrowDown') { softDrop(); draw(); }
@@ -705,7 +711,6 @@
                 case 'ArrowLeft': case 'a': case 'A': move(-1); draw(); break;
                 case 'ArrowRight': case 'd': case 'D': move(1); draw(); break;
                 case 'ArrowUp': case 'w': case 'W': rotatePiece(1); draw(); break;
-                case '?': case 'q': case 'Q': rotatePiece(-1); draw(); break;
                 case ' ': e.preventDefault(); hardDrop(); break;
                 case 'ArrowDown': case 's': case 'S': softDrop(); draw(); break;
                 case 'c': case 'C': hold(); break;
