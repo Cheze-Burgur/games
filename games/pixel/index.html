@@ -4,932 +4,796 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Pixel Art Maker</title>
+    <title>Tetris</title>
+
+    <!-- Pixel font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg: #244b6d;
-            /* deep blue */
-            --panel: #17384a;
-            --accent: #f08a2d;
-            /* orange-ish */
-            --muted: #f5deb3;
-            --card: #f5deb3;
-            --card-dark: #444;
+            --bg: #0b1220;
+            --panel: #0f2233;
+            --accent: #ffb86b;
+            --muted: #6ea0c7;
+            --mutedAccent: #bd6201;
+            --glass: rgba(255, 255, 255, 0.03);
         }
 
         html,
         body {
             height: 100%;
             margin: 0;
-            font-family: Inter, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--muted)
+            background: linear-gradient(180deg, #051026 0%, #07172a 100%);
+            font-family: 'Press Start 2P', monospace;
+            color: #cfe9ff;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .app {
+        /* Layout */
+        .wrap {
             display: flex;
-            gap: 18px;
+            gap: 28px;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .board-card {
+            background: linear-gradient(180deg, var(--panel), rgba(0, 0, 0, 0.15));
             padding: 18px;
-            height: 100%;
-            box-sizing: border-box;
-            margin-left: 298px;
-            /* Prevent main content from hiding behind aside */
-        }
-
-        aside {
-            width: 280px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 18px;
-            border-radius: 10px;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-
-            position: fixed;
-            top: 18px;
-            left: 18px;
-            max-height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-
-        header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px
-        }
-
-        header h1 {
-            font-size: 1.25rem;
-            margin: 0;
-            color: var(--muted)
-        }
-
-        .tools {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px
-        }
-
-        .tool {
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.06);
-            text-align: center;
-            cursor: pointer;
-            border: 2px solid transparent
-        }
-
-        .tool.active {
-            border-color: var(--accent);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35)
-        }
-
-        .color-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 12px
-        }
-
-        .color-input {
-            flex: 1;
-            display: flex;
-            gap: 8px;
-            align-items: center
-        }
-
-        .color-swatch {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            border: 2px solid rgba(0, 0, 0, 0.25)
-        }
-
-        label {
-            font-size: 0.9rem;
-            color: var(--muted);
-            display: block;
-            margin-bottom: 6px
-        }
-
-        .control {
-            margin-bottom: 12px
-        }
-
-        input[type=range] {
-            width: 100%
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 8px
-        }
-
-        button {
-            cursor: pointer;
-            border-radius: 8px;
-            padding: 10px 12px;
-            border: none;
-            background: var(--accent);
-            color: #102227;
-            font-weight: 600
-        }
-
-        button.secondary {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: var(--muted)
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center
-        }
-
-        .canvas-wrap {
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.02));
-            padding: 14px;
             border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5)
+            box-shadow: 0 10px 30px rgba(3, 9, 18, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(255, 255, 255, 0.03);
         }
 
-        .canvas-stage {
-            position: relative;
-            display: inline-block
-        }
-
-        canvas {
+        /* Main canvas */
+        canvas#board {
             display: block;
             image-rendering: pixelated;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: transparent
-        }
-
-        .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none
-        }
-
-        footer {
-            margin-top: 8px;
-            font-size: 0.85rem;
-            color: var(--muted);
-            text-align: center
-        }
-
-        .small {
-            font-size: 0.85rem;
-            color: var(--muted)
-        }
-
-        .row {
-            display: flex;
-            gap: 8px;
-            align-items: center
-        }
-
-        input[type=number] {
-            width: 88px;
-            padding: 8px;
+            background: linear-gradient(180deg, #072033 0%, #041a28 100%);
             border-radius: 6px;
-            border: 1px solid rgba(0, 0, 0, 0.15)
+            box-shadow: 0 8px 20px rgba(2, 6, 12, 0.7);
+            margin-bottom: 10px;
         }
 
-        .tool-legend {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-top: 8px
-        }
-
-        .filled-toggle {
+        /* Side columns */
+        .side {
             display: flex;
-            gap: 8px;
-            align-items: center
+            flex-direction: column;
+            gap: 14px;
+            width: 230px;
         }
 
-        .hint {
-            font-size: 0.8rem;
-            color: rgba(245, 222, 179, 0.9);
-            margin-top: 6px;
-            margin-bottom: 6px;
+        .panel {
+            background: var(--glass);
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            min-height: 90px;
         }
 
-        .copyright {
-            font-size: 0.8rem;
-            color: rgba(218, 213, 203, 0.9);
-            margin-top: 8px;
+        .panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 10px;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        .numbers {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .big {
+            font-size: 14px;
+            color: var(--mutedAccent);
+        }
+
+        button.action {
+            background: linear-gradient(180deg, var(--accent), #ff9b3a);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: inherit;
+            cursor: pointer;
+            color: #08121a;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+            transition: transform .06s ease;
+            font-size: 10px;
+        }
+
+        button.action:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .small-canvas {
+            width: 120px;
+            height: 96px;
+            image-rendering: pixelated;
+            background: linear-gradient(180deg, #072033 0%, #041a28 100%);
+            border-radius: 6px;
+            display: block;
+        }
+
+        .controls {
+            font-size: 9px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--glass);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            text-align: center;
+            font-size: 9px;
+            color: var(--mutedAccent);
+        }
+
+        .header a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .header a:hover {
+            text-decoration: underline;
+            text-decoration-style: dashed;
+        }
+
+        strong {
+            color: var(--mutedAccent)
+        }
+
+        /* block look */
+        .cell-outline {
+            stroke: rgba(0, 0, 0, 0.6);
+            stroke-width: 1.5;
+        }
+
+        /* retro scanlines */
+        .scanlines {
+            position: absolute;
+            pointer-events: none;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 100% 4px;
+            mix-blend-mode: overlay;
+            border-radius: 14px;
+        }
+
+        /* responsive */
+        @media (max-width:880px) {
+            .wrap {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="app">
-        <aside>
-            <header>
-                <div
-                    style="width:44px;height:44px;border-radius:8px;background:var(--panel);display:flex;align-items:center;justify-content:center">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                        <!-- 2x2 grid of pixels -->
-                        <rect x="3" y="3" width="8" height="8" fill="#244b6d" rx="2" />
-                        <rect x="13" y="3" width="8" height="8" fill="#f08a2d" rx="2" />
-                        <rect x="3" y="13" width="8" height="8" fill="#f08a2d" rx="2" />
-                        <rect x="13" y="13" width="8" height="8" fill="#244b6d" rx="2" />
-                    </svg>
-                </div>
-                <h1>Pixel Art Maker</h1>
-            </header>
+    <div class="wrap">
+        <div class="board-card">
+            <canvas id="board" width="300" height="600"></canvas>
+            <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
+                <button id="startBtn" class="action">START</button>
+                <button id="pauseBtn" class="action">PAUSE</button>
+                <button id="resetBtn" class="action">RESET</button>
+            </div>
+        </div>
 
-            <div class="tools" title="Tools">
-                <button id="undoBtn" class="secondary">Undo (Ctrl Z)</button>
-                <button id="redoBtn" class="secondary">Redo (Ctrl Y)</button>
-                <div class="tool active" data-tool="pencil">Pencil</div>
-                <div class="tool" data-tool="eraser">Eraser</div>
-                <div class="tool" data-tool="line">Line</div>
-                <div class="tool" data-tool="rect">Rectangle</div>
-                <div class="tool" data-tool="oval">Oval</div>
-                <div class="tool" data-tool="fill">Fill</div>
-                <div class="tool" data-tool="eyedropper">Eyedropper</div>
-                <button id="exportBtn">Export as PNG</button>
-                <button id="clearBtn" class="secondary">Clear</button>
-                <div class="hint">Export produces a PNG<br>Clear resets the canvas</div>
+        <div class="side">
+
+            <div class="header"><strong>Tetris</strong> • Made by <a href="https://github.com/Cheze-Burgur"><strong style="color:var(--accent)">©Cheze</strong></a></div>
+
+            <div class="panel">
+                <h3>NEXT</h3>
+                <canvas id="next" class="small-canvas" width="120" height="96"></canvas>
             </div>
 
-            <div class="control">
-                <label>Color</label>
-                <div class="color-row">
-                    <div class="color-swatch" id="swatch" style="background:#000"></div>
-                    <div class="color-input">
-                        <input type="color" id="colorPicker" value="#000000" />
-                        <input type="text" id="hexInput" value="#000000" />
+            <div class="panel">
+                <h3>HOLD</h3>
+                <canvas id="hold" class="small-canvas" width="120" height="96"></canvas>
+            </div>
+
+            <div class="panel">
+                <h3>STATS</h3>
+                <div class="numbers">
+                    <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">SCORE</div>
+                        <div class="big" id="score">0</div>
                     </div>
+                    <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">LEVEL</div>
+                        <div class="big" id="level">1</div>
+                    </div>
+                    <div>
+                        <div style="font-size:8px;color:var(--muted);margin-top:3px;margin-bottom:6px;">LINES</div>
+                        <div class="big" id="lines">0</div>
+                    </div>
+                </div>
+                <div class="panel" id="hiscoresPanel">
+                    <h3>HIGHSCORES</h3>
+                    <ol id="hiscoresList" style="font-size:9px; line-height:1.6; margin:0; padding-left:18px;"></ol>
                 </div>
             </div>
 
-            <div class="control">
-                <label>Canvas size (pixels)</label>
-                <div class="row">
-                    <div class="row">
-                        <input type="number" id="canvasWidth" min="5" max="1024" step="1" value="250"
-                            style="width:60px;" />
-                        <span>×</span>
-                        <input type="number" id="canvasHeight" min="5" max="1024" step="1" value="250"
-                            style="width:60px;" />
-                        <button id="resizeBtn" class="secondary">Resize</button>
-                    </div>
+            <div class="panel controls">
+                <h3>CONTROLS</h3>
+                <div>
+                    <strong>
+                        <>
+                    </strong> / <strong>A D</strong> : Move
                 </div>
-
-                <div class="control">
-                    <label>Zoom / Display scale</label>
-                    <input id="zoom" type="range" min="2" max="30" value="3" step="0.25" />
-                    <div class="small">Zoom: <span id="zoomVal">3×</span></div>
-                    <div class="hint">Use zoom to preview larger pixels.</div>
+                <div>
+                    <strong>Q W</strong> / <strong>? Up</strong> : Rotate
                 </div>
-
-                <div class="control">
-                    <div class="control">
-                        <label>Stroke Width</label>
-                        <input id="strokeWidth" type="range" min="1" max="30" value="1" />
-                        <div class="small">Width: <span id="strokeWidthVal">1 px</span></div>
-                        <div class="hint">Controls the thickness for pencil, eraser, line, and shape borders.</div>
-                    </div>
-                    <div class="filled-toggle">
-                        <label><input type="checkbox" id="fillShapes" checked /> Filled shapes</label>
-                    </div>
+                <div>
+                    <strong>Down</strong> : Soft drop
                 </div>
-
-                <div class="tool-legend">
-                    <strong>Shortcuts:</strong> P = Pencil, L = Line, R = Rectangle, O = Oval, F = Fill, I = Eyedropper
+                <div>
+                    <strong>Space</strong> : Hard drop
                 </div>
-                <div class="copyright">Made by <a href="https://github.com/Cheze-Burgur" style="color:var(--accent); text-decoration: none;"><strong>©Cheze</strong></a></div>
-        </aside>
-
-        <main>
-            <div class="canvas-wrap">
-                <div class="canvas-stage">
-                    <!-- main pixel canvas (internal resolution = grid size) -->
-                    <canvas id="mainCanvas"></canvas>
-                    <!-- overlay for shape previews -->
-                    <canvas id="overlayCanvas" class="grid-overlay"></canvas>
+                <div>
+                    <strong>C</strong> : Hold
                 </div>
-                <footer>
-                    <div class="small">Canvas: <span id="sizeReadout">300 × 300</span> — Tool: <span
-                            id="activeTool">Pencil</span></div>
-                </footer>
+                <div>
+                    <strong>P</strong> : Pause
+                </div>
             </div>
-        </main>
+
+        </div>
     </div>
 
     <script>
-        const DEFAULT_SIZE = 250;
+        /* ----------------------
+           TETROMINO DEFINITIONS
+           ---------------------- */
+        const COLS = 10, ROWS = 20;
+        const BLOCK = 30; // pixel size of one block (canvas scaled accordingly)
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        canvas.style.width = (COLS * BLOCK) + 'px';
+        canvas.style.height = (ROWS * BLOCK) + 'px';
+        ctx.imageSmoothingEnabled = false;
 
-        const mainCanvas = document.getElementById('mainCanvas');
-        const overlayCanvas = document.getElementById('overlayCanvas');
-        const colorPicker = document.getElementById('colorPicker');
-        const hexInput = document.getElementById('hexInput');
-        const swatch = document.getElementById('swatch');
-        const canvasWidthInput = document.getElementById('canvasWidth');
-        const canvasHeightInput = document.getElementById('canvasHeight');
-        const resizeBtn = document.getElementById('resizeBtn');
-        const toolButtons = document.querySelectorAll('.tool');
-        const activeToolLabel = document.getElementById('activeTool');
-        const sizeReadout = document.getElementById('sizeReadout');
-        const zoomRange = document.getElementById('zoom');
-        const zoomVal = document.getElementById('zoomVal');
-        const fillShapes = document.getElementById('fillShapes');
-        const exportBtn = document.getElementById('exportBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const strokeWidthSlider = document.getElementById('strokeWidth');
-        const strokeWidthVal = document.getElementById('strokeWidthVal');
+        /* small canvases */
+        const nextCanvas = document.getElementById('next'); const nctx = nextCanvas.getContext('2d');
+        const holdCanvas = document.getElementById('hold'); const hctx = holdCanvas.getContext('2d');
+        nctx.imageSmoothingEnabled = false; hctx.imageSmoothingEnabled = false;
 
-        let state = {
-            tool: 'pencil',
-            color: '#000000',
-            width: DEFAULT_SIZE,
-            height: DEFAULT_SIZE,
-            zoom: Number(zoomRange.value),
-            drawing: false,
-            start: null,
-            imgData: null,
-            strokeWidth: Number(strokeWidthSlider ? strokeWidthSlider.value : 1)
+        /* UI */
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const linesEl = document.getElementById('lines');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        /* tetromino shapes with rotation states */
+        const SHAPES = {
+            I: [
+                [[0, 1], [1, 1], [2, 1], [3, 1]],
+                [[2, 0], [2, 1], [2, 2], [2, 3]]
+            ],
+            J: [
+                [[0, 0], [0, 1], [1, 1], [2, 1]],
+                [[1, 0], [2, 0], [1, 1], [1, 2]],
+                [[0, 1], [1, 1], [2, 1], [2, 2]],
+                [[1, 0], [1, 1], [1, 2], [0, 2]]
+            ],
+            L: [
+                [[2, 0], [0, 1], [1, 1], [2, 1]],
+                [[1, 0], [1, 1], [1, 2], [2, 2]],
+                [[0, 1], [1, 1], [2, 1], [0, 2]],
+                [[0, 0], [1, 0], [1, 1], [1, 2]]
+            ],
+            O: [
+                [[1, 0], [2, 0], [1, 1], [2, 1]]
+            ],
+            S: [
+                [[1, 1], [2, 1], [0, 2], [1, 2]],
+                [[1, 0], [1, 1], [2, 1], [2, 2]]
+            ],
+            T: [
+                [[1, 0], [0, 1], [1, 1], [2, 1]],
+                [[1, 0], [1, 1], [2, 1], [1, 2]],
+                [[0, 1], [1, 1], [2, 1], [1, 2]],
+                [[1, 0], [0, 1], [1, 1], [1, 2]]
+            ],
+            Z: [
+                [[0, 1], [1, 1], [1, 2], [2, 2]],
+                [[2, 0], [1, 1], [2, 1], [1, 2]]
+            ]
         };
 
-        let undoStack = [];
-        let redoStack = [];
+        const COLORS = {
+            I: '#61dafb', J: '#8ad3ff', L: '#ffb86b', O: '#ffd86b', S: '#7ed957', T: '#d86bff', Z: '#ff6b6b'
+        };
 
-        let lastTool = 'pencil'; // default
+        /* ----------------------
+           GAME STATE
+           ---------------------- */
+        let grid;
+        let current;
+        let nextQueue = [];
+        let holdPiece = null;
+        let canHold = true;
+        let score = 0, level = 1, clearedLines = 0;
+        let dropInterval = 800; // ms
+        let lastDrop = 0;
+        let running = false;
+        let paused = false;
+        let highscores = [];
 
-        // stroke width UI
-        strokeWidthSlider.addEventListener('input', () => {
-            state.strokeWidth = Number(strokeWidthSlider.value);
-            strokeWidthVal.textContent = state.strokeWidth + ' px';
-        });
-        strokeWidthVal.textContent = state.strokeWidth + ' px';
+        /* create empty grid */
+        function makeGrid() {
+            const g = [];
+            for (let r = 0; r < ROWS; r++) {
+                g.push(new Array(COLS).fill(0));
+            }
+            return g;
+        }
 
-        canvasWidthInput.value = DEFAULT_SIZE;
-        canvasHeightInput.value = DEFAULT_SIZE;
-        zoomVal.textContent = state.zoom + '×';
+        /* random piece generation (7-bag) */
+        function makeBag() {
+            const types = Object.keys(SHAPES);
+            let bag = types.slice();
+            // fisher-yates
+            for (let i = bag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [bag[i], bag[j]] = [bag[j], bag[i]];
+            }
+            return bag;
+        }
 
-        initCanvas(DEFAULT_SIZE, DEFAULT_SIZE);
+        /* fill nextQueue with at least n pieces */
+        function refillQueue() {
+            while (nextQueue.length < 7) {
+                const bag = makeBag();
+                nextQueue.push(...bag);
+            }
+        }
 
-        function initCanvas(width = DEFAULT_SIZE, height = DEFAULT_SIZE, keepImage = false) {
-            mainCanvas.width = width;
-            mainCanvas.height = height;
-            overlayCanvas.width = width;
-            overlayCanvas.height = height;
+        /* create a new tetromino object */
+        function spawnPiece(type) {
+            const rots = SHAPES[type];
+            const r = 0;
+            const blocks = rots[r].map(p => ({ x: p[0], y: p[1] }));
+            // center spawn
+            const xOffset = Math.floor((COLS - 4) / 2);
+            return {
+                type, rot: 0, x: xOffset, y: -1, shapes: rots // y can be negative for spawn
+            };
+        }
 
-            state.width = width;
-            state.height = height;
+        /* start game */
+        function startGame() {
+            grid = makeGrid();
+            nextQueue = [];
+            refillQueue();
+            holdPiece = null;
+            canHold = true;
+            score = 0; level = 1; clearedLines = 0; updateStats();
+            spawnFromQueue();
+            running = true; paused = false; lastDrop = performance.now();
+            loop();
+        }
 
-            const scale = state.zoom;
-            mainCanvas.style.width = (width * scale) + 'px';
-            mainCanvas.style.height = (height * scale) + 'px';
-            overlayCanvas.style.width = (width * scale) + 'px';
-            overlayCanvas.style.height = (height * scale) + 'px';
+        /* reset */
+        function resetGame() {
+            running = false;
+            paused = false;
+            grid = makeGrid();
+            nextQueue = [];
+            refillQueue();
+            holdPiece = null;
+            canHold = true;
+            score = 0; level = 1; clearedLines = 0;
+            draw();
+            updateStats();
+        }
 
-            const ctx = mainCanvas.getContext('2d');
-            ctx.imageSmoothingEnabled = false;
+        /* update stats UI and drop interval */
+        function updateStats() {
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+            linesEl.textContent = clearedLines;
+            // drop interval formula (speed up as level increases)
+            dropInterval = Math.max(80, 800 - (level - 1) * 60);
+        }
 
-            if (!keepImage) {
-                ctx.clearRect(0, 0, width, height);
-                state.imgData = ctx.getImageData(0, 0, width, height);
-            } else {
-                const newData = ctx.createImageData(width, height);
-                if (state.imgData) {
-                    const old = state.imgData;
-                    const minW = Math.min(old.width, newData.width);
-                    const minH = Math.min(old.height, newData.height);
-                    for (let y = 0; y < minH; y++) {
-                        for (let x = 0; x < minW; x++) {
-                            const iOld = (y * old.width + x) * 4;
-                            const iNew = (y * newData.width + x) * 4;
-                            newData.data[iNew] = old.data[iOld];
-                            newData.data[iNew + 1] = old.data[iOld + 1];
-                            newData.data[iNew + 2] = old.data[iOld + 2];
-                            newData.data[iNew + 3] = old.data[iOld + 3];
+        /* spawn next from queue */
+        function spawnFromQueue() {
+            refillQueue();
+            const t = nextQueue.shift();
+            current = spawnPiece(t);
+            if (collision(current)) { // game over condition
+                running = false;
+                // lock to top to show game over visually
+                draw();
+                setTimeout(() => {
+                    highscores.push(score);
+                    highscores.sort((a, b) => b - a);   // descending
+                    if (highscores.length > 5) highscores.length = 5; // keep top 5
+                    saveHighscores();
+                    updateHighscoreList();
+
+                    alert('GAME OVER\nScore: ' + score);
+                }, 50);
+            }
+            canHold = true;
+            drawNext();
+            drawHold();
+        }
+
+        /* CHECK COLLISION */
+        function collision(piece, offsetX = 0, offsetY = 0, rotOffset = 0) {
+            const shapes = piece.shapes;
+            const rotIndex = ((piece.rot + rotOffset) % shapes.length + shapes.length) % shapes.length;
+            const shape = shapes[rotIndex];
+            for (const p of shape) {
+                const x = piece.x + p[0] + offsetX;
+                const y = piece.y + p[1] + offsetY;
+                if (x < 0 || x >= COLS) return true;
+                if (y >= ROWS) return true;
+                if (y >= 0 && grid[y][x]) return true;
+            }
+            return false;
+        }
+
+        /* lock piece into grid */
+        function lockPiece() {
+            const shape = current.shapes[current.rot];
+            for (const p of shape) {
+                const x = current.x + p[0];
+                const y = current.y + p[1];
+                if (y >= 0) grid[y][x] = current.type;
+            }
+            clearLines();
+            spawnFromQueue();
+        }
+
+        /* clear full lines */
+        function clearLines() {
+            const rowsToClear = [];
+            for (let r = 0; r < ROWS; r++) {
+                if (grid[r].every(c => c)) rowsToClear.push(r);
+            }
+            if (rowsToClear.length) {
+                // simple visual clear animation: flash then remove
+                let flashCount = 0;
+                const flashMax = 6;
+                const interval = setInterval(() => {
+                    flashCount++;
+                    // toggle row fill to blank/filled
+                    for (const r of rowsToClear) {
+                        for (let c = 0; c < COLS; c++) {
+                            grid[r][c] = (flashCount % 2 === 0) ? 0 : 'X';
                         }
                     }
-                }
-                state.imgData = newData;
-                ctx.putImageData(state.imgData, 0, 0);
-            }
-
-            overlayCanvas.getContext('2d').clearRect(0, 0, width, height);
-
-            drawGridOverlay();
-            updateReadout();
-        }
-
-        function updateReadout() {
-            sizeReadout.textContent = `${mainCanvas.width} × ${mainCanvas.height}`;
-            activeToolLabel.textContent = capitalize(state.tool);
-        }
-
-        function setTool(toolName) {
-            // Remember previous tool only when switching TO eyedropper
-            if (toolName === 'eyedropper' && state.tool !== 'eyedropper') {
-                lastTool = state.tool;
-            }
-            state.tool = toolName;
-            toolButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tool === toolName));
-            updateReadout();
-        }
-
-        function hexToRGBA(hex) {
-            hex = hex.replace('#', '');
-            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-            const n = parseInt(hex, 16);
-            return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
-        }
-
-        function rgbaToHex(r, g, b) {
-            return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-        }
-
-        function setColor(hex) {
-            state.color = hex;
-            swatch.style.background = hex;
-            hexInput.value = hex;
-            colorPicker.value = hex;
-        }
-
-        function saveState() {
-            undoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
-            redoStack = [];
-        }
-
-        function undo() {
-            if (undoStack.length > 0) {
-                redoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
-                const prev = undoStack.pop();
-                mainCanvas.getContext('2d').putImageData(prev, 0, 0);
-                state.imgData = mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height);
-                redrawMain();
-            }
-        }
-
-        function redo() {
-            if (redoStack.length > 0) {
-                undoStack.push(mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height));
-                const next = redoStack.pop();
-                mainCanvas.getContext('2d').putImageData(next, 0, 0);
-                state.imgData = mainCanvas.getContext('2d').getImageData(0, 0, mainCanvas.width, mainCanvas.height);
-                redrawMain();
-            }
-        }
-
-        document.getElementById('undoBtn').addEventListener('click', undo);
-        document.getElementById('redoBtn').addEventListener('click', redo);
-
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo();
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') redo();
-        });
-
-        colorPicker.addEventListener('input', e => setColor(e.target.value));
-        hexInput.addEventListener('change', e => {
-            let v = e.target.value.trim();
-            if (!v.startsWith('#')) v = '#' + v;
-            if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
-                setColor(v);
-            } else {
-                e.target.value = state.color;
-            }
-        });
-
-        toolButtons.forEach(btn => btn.addEventListener('click', () => setTool(btn.dataset.tool)));
-
-        setTool('pencil');
-        setColor('#000000');
-
-        zoomRange.addEventListener('input', () => {
-            state.zoom = Number(zoomRange.value);
-            zoomVal.textContent = state.zoom + '×';
-            mainCanvas.style.width = (mainCanvas.width * state.zoom) + 'px';
-            mainCanvas.style.height = (mainCanvas.height * state.zoom) + 'px';
-            overlayCanvas.style.width = (overlayCanvas.width * state.zoom) + 'px';
-            overlayCanvas.style.height = (overlayCanvas.height * state.zoom) + 'px';
-            drawGridOverlay();
-        });
-
-        resizeBtn.addEventListener('click', () => {
-            const newWidth = Math.max(5, Math.min(1024, Number(canvasWidthInput.value || DEFAULT_SIZE)));
-            const newHeight = Math.max(5, Math.min(1024, Number(canvasHeightInput.value || DEFAULT_SIZE)));
-            if (newWidth === mainCanvas.width && newHeight === mainCanvas.height) return;
-            const keep = confirm('Keep current drawing contents where possible when resizing? Click Cancel to start fresh.');
-            initCanvas(newWidth, newHeight, keep);
-            state.width = newWidth;
-            state.height = newHeight;
-        });
-
-        clearBtn.addEventListener('click', () => {
-            if (confirm('Clear the canvas?')) {
-                const ctx = mainCanvas.getContext('2d');
-                ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
-                state.imgData = ctx.getImageData(0, 0, mainCanvas.width, mainCanvas.height);
-                drawGridOverlay();
-            }
-        });
-
-        exportBtn.addEventListener('click', () => {
-            let scale = parseInt(prompt('Export scale (pixels per grid cell). 1 = exact size. For a larger image use e.g. 10.', '10'));
-            if (isNaN(scale) || scale < 1) scale = 1;
-            const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = mainCanvas.width * scale;
-            exportCanvas.height = mainCanvas.height * scale;
-            const exCtx = exportCanvas.getContext('2d');
-            exCtx.imageSmoothingEnabled = false;
-
-            const tmp = document.createElement('canvas');
-            tmp.width = mainCanvas.width;
-            tmp.height = mainCanvas.height;
-            const tctx = tmp.getContext('2d');
-            tctx.putImageData(state.imgData, 0, 0);
-
-            exCtx.drawImage(tmp, 0, 0, exportCanvas.width, exportCanvas.height);
-
-            exportCanvas.toBlob(blob => {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `pixel-art-${mainCanvas.width}x${mainCanvas.height}x${scale}.png`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }, 'image/png');
-        });
-
-        function getPointerPixel(e, canvas) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX !== undefined ? e.clientX : e.touches && e.touches[0].clientX;
-            const clientY = e.clientY !== undefined ? e.clientY : e.touches && e.touches[0].clientY;
-            const x = Math.floor(((clientX - rect.left) / rect.width) * canvas.width);
-            const y = Math.floor(((clientY - rect.top) / rect.height) * canvas.height);
-            return { x: clamp(x, 0, canvas.width - 1), y: clamp(y, 0, canvas.height - 1) };
-        }
-
-        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-
-        function setPixel(x, y, rgba) {
-            if (x < 0 || x >= state.imgData.width || y < 0 || y >= state.imgData.height) return;
-            const idx = (y * state.imgData.width + x) * 4;
-            state.imgData.data[idx] = rgba[0];
-            state.imgData.data[idx + 1] = rgba[1];
-            state.imgData.data[idx + 2] = rgba[2];
-            state.imgData.data[idx + 3] = rgba[3] !== undefined ? rgba[3] : 255;
-        }
-
-        function getPixelRGBA(x, y) {
-            const idx = (y * state.imgData.width + x) * 4;
-            return [
-                state.imgData.data[idx],
-                state.imgData.data[idx + 1],
-                state.imgData.data[idx + 2],
-                state.imgData.data[idx + 3]
-            ];
-        }
-
-        function redrawMain() {
-            const ctx = mainCanvas.getContext('2d');
-            ctx.putImageData(state.imgData, 0, 0);
-        }
-
-        // Draw a filled circle at (cx, cy) with radius, into imgData
-        function drawCirclePixels(cx, cy, radius, colorRGBA) {
-            const r2 = radius * radius;
-            const xMin = Math.floor(cx - radius), xMax = Math.ceil(cx + radius);
-            const yMin = Math.floor(cy - radius), yMax = Math.ceil(cy + radius);
-            for (let y = yMin; y <= yMax; y++) {
-                for (let x = xMin; x <= xMax; x++) {
-                    if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r2) {
-                        setPixel(x, y, colorRGBA);
-                    }
-                }
-            }
-        }
-
-        // Bresenham line, but draw a circle at each pixel for stroke width
-        function drawLinePixels(x0, y0, x1, y1, colorRGBA, strokeWidth = 1) {
-            let dx = Math.abs(x1 - x0);
-            let sx = x0 < x1 ? 1 : -1;
-            let dy = -Math.abs(y1 - y0);
-            let sy = y0 < y1 ? 1 : -1;
-            let err = dx + dy;
-            while (true) {
-                drawCirclePixels(x0, y0, strokeWidth / 2, colorRGBA);
-                if (x0 === x1 && y0 === y1) break;
-                let e2 = 2 * err;
-                if (e2 >= dy) { err += dy; x0 += sx; }
-                if (e2 <= dx) { err += dx; y0 += sy; }
-            }
-        }
-
-        // Draw filled or bordered rectangle with borderWidth
-        function drawRectPixels(x0, y0, x1, y1, colorRGBA, filled = true, borderWidth = 1) {
-            const xMin = Math.min(x0, x1), xMax = Math.max(x0, x1);
-            const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
-            if (filled) {
-                for (let y = yMin; y <= yMax; y++) {
-                    for (let x = xMin; x <= xMax; x++) {
-                        setPixel(x, y, colorRGBA);
-                    }
-                }
-            } else {
-                // Draw border of thickness borderWidth
-                for (let w = 0; w < borderWidth; w++) {
-                    // Top
-                    for (let x = xMin + w; x <= xMax - w; x++) setPixel(x, yMin + w, colorRGBA);
-                    // Bottom
-                    for (let x = xMin + w; x <= xMax - w; x++) setPixel(x, yMax - w, colorRGBA);
-                    // Left
-                    for (let y = yMin + w; y <= yMax - w; y++) setPixel(xMin + w, y, colorRGBA);
-                    // Right
-                    for (let y = yMin + w; y <= yMax - w; y++) setPixel(xMax - w, y, colorRGBA);
-                }
-            }
-        }
-
-        // Draw filled or bordered ellipse with borderWidth
-        function drawEllipsePixels(x0, y0, x1, y1, colorRGBA, filled = true, borderWidth = 1) {
-            const cx = (x0 + x1) / 2;
-            const cy = (y0 + y1) / 2;
-            const rx = Math.abs(x1 - x0) / 2;
-            const ry = Math.abs(y1 - y0) / 2;
-            if (rx < 0.5 || ry < 0.5) {
-                setPixel(Math.round(cx), Math.round(cy), colorRGBA);
-                return;
-            }
-            const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
-            const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
-            const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
-
-            if (filled) {
-                for (let y = yMin; y <= yMax; y++) {
-                    for (let x = xMin; x <= xMax; x++) {
-                        const dx = (x - cx), dy = (y - cy);
-                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                        if (val <= 1) setPixel(x, y, colorRGBA);
-                    }
-                }
-            } else {
-                // Border: draw pixels where val is within the band corresponding to borderWidth
-                // The thickness in radius for borderWidth is: borderWidth/2 inwards, borderWidth/2 outwards
-                // Since val = 1 is the edge, we want val in [1 - inner, 1 + outer]
-                // Approximate pixel width band for val:
-                // Use bandWidth = borderWidth / Math.max(rx, ry)
-                const bandWidth = borderWidth / Math.max(rx, ry);
-                for (let y = yMin; y <= yMax; y++) {
-                    for (let x = xMin; x <= xMax; x++) {
-                        const dx = (x - cx), dy = (y - cy);
-                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                        if (Math.abs(val - 1) <= bandWidth / 2) {
-                            setPixel(x, y, colorRGBA);
+                    draw();
+                    if (flashCount >= flashMax) {
+                        clearInterval(interval);
+                        // actually remove rows
+                        for (const r of rowsToClear.sort((a, b) => b - a)) {
+                            grid.splice(r, 1);
+                            grid.unshift(new Array(COLS).fill(0));
                         }
+                        // scoring: standard Tetris scoring
+                        const n = rowsToClear.length;
+                        const linePoints = [0, 40, 100, 300, 1200]; // multiplies by level
+                        score += linePoints[n] * level;
+                        clearedLines += n;
+                        level = Math.floor(clearedLines / 10) + 1;
+                        updateStats();
+                        draw();
                     }
+                }, 60);
+            }
+        }
+
+        /* rotate with simple wall kick (basic) */
+        function rotatePiece(dir) {
+            const nextRot = (current.rot + dir + current.shapes.length) % current.shapes.length;
+            // try offsets
+            const kicks = [0, -1, 1, -2, 2];
+            for (const k of kicks) {
+                if (!collision(current, k, 0, dir)) {
+                    current.x += k;
+                    current.rot = nextRot;
+                    return;
                 }
             }
         }
 
-        function floodFill(sx, sy, targetRGBA, replacementRGBA) {
-            const w = state.imgData.width, h = state.imgData.height;
-            if (targetRGBA[0] === replacementRGBA[0] && targetRGBA[1] === replacementRGBA[1] && targetRGBA[2] === replacementRGBA[2] && targetRGBA[3] === replacementRGBA[3]) return;
-            function same(x, y, rgba) {
-                const p = getPixelRGBA(x, y);
-                return p[0] === rgba[0] && p[1] === rgba[1] && p[2] === rgba[2] && p[3] === rgba[3];
+        /* hold */
+        function hold() {
+            if (!canHold) return;
+            canHold = false;
+            if (!holdPiece) {
+                holdPiece = current.type;
+                spawnFromQueue();
+            } else {
+                const temp = holdPiece;
+                holdPiece = current.type;
+                current = spawnPiece(temp);
             }
-            const stack = [[sx, sy]];
-            while (stack.length) {
-                const [x, y] = stack.pop();
-                if (x < 0 || x >= w || y < 0 || y >= h) continue;
-                if (!same(x, y, targetRGBA)) continue;
-                setPixel(x, y, replacementRGBA);
-                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-            }
+            // ensure we don't spawn inside collision — if collision, shift right until ok (basic)
+            while (collision(current) && current.x < COLS) current.x++;
+            draw();
+            drawHold();
         }
 
-        function clearOverlay() { overlayCanvas.getContext('2d').clearRect(0, 0, overlayCanvas.width, overlayCanvas.height); }
+        /* hard drop */
+        function hardDrop() {
+            while (!collision(current, 0, 1)) {
+                current.y++;
+            }
+            lockPiece();
+            draw();
+        }
 
-        // Overlay previews. They use 1px wide always for visual preview.
-        function drawOverlayLine(x0, y0, x1, y1, strokeWidth = 1) {
-            const ctx = overlayCanvas.getContext('2d');
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            ctx.fillStyle = hexToCSS(state.color);
-
-            let dx = Math.abs(x1 - x0);
-            let sx = x0 < x1 ? 1 : -1;
-            let dy = -Math.abs(y1 - y0);
-            let sy = y0 < y1 ? 1 : -1;
-            let err = dx + dy;
-            while (true) {
-                drawOverlayCircle(ctx, x0, y0, strokeWidth / 2);
-                if (x0 === x1 && y0 === y1) break;
-                let e2 = 2 * err;
-                if (e2 >= dy) { err += dy; x0 += sx; }
-                if (e2 <= dx) { err += dx; y0 += sy; }
+        /* soft drop (one cell) */
+        function softDrop() {
+            if (!collision(current, 0, 1)) {
+                current.y++;
+            } else {
+                lockPiece();
             }
         }
 
-        // Helper for drawing a filled circle on overlay
-        function drawOverlayCircle(ctx, cx, cy, radius) {
-            ctx.beginPath();
-            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-            ctx.fill();
+        /* move horizontally */
+        function move(dx) {
+            if (!collision(current, dx, 0)) {
+                current.x += dx;
+            }
         }
 
-        function drawOverlayRect(x0, y0, x1, y1, filled, borderWidth = 1) {
-            const ctx = overlayCanvas.getContext('2d');
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            ctx.fillStyle = hexToCSS(state.color);
-            const xMin = Math.min(x0, x1), xMax = Math.max(x0, x1);
-            const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
-            if (filled) ctx.fillRect(xMin, yMin, xMax - xMin + 1, yMax - yMin + 1);
-            else {
-                for (let w = 0; w < borderWidth; w++) {
-                    // Top
-                    ctx.fillRect(xMin + w, yMin + w, xMax - xMin + 1 - 2 * w, 1);
-                    // Bottom
-                    ctx.fillRect(xMin + w, yMax - w, xMax - xMin + 1 - 2 * w, 1);
-                    // Left
-                    ctx.fillRect(xMin + w, yMin + w, 1, yMax - yMin + 1 - 2 * w);
-                    // Right
-                    ctx.fillRect(xMax - w, yMin + w, 1, yMax - yMin + 1 - 2 * w);
+        /* draw functions */
+        function drawCell(ctx, x, y, sz, type) {
+            const pad = 1;
+            const px = x * sz + pad;
+            const py = y * sz + pad;
+            // base color
+            const color = type ? COLORS[type] || '#888' : null;
+            if (type) {
+                ctx.fillStyle = color;
+                roundRect(ctx, px, py, sz - 2 * pad, sz - 2 * pad, 3);
+                ctx.fill();
+                // inner highlight
+                ctx.globalAlpha = 0.18;
+                ctx.fillStyle = '#ffffff';
+                roundRect(ctx, px, py, (sz - 2 * pad), (sz - 2 * pad) / 2, 3);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                // outline
+                ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+                ctx.lineWidth = 2;
+                roundRect(ctx, px, py, sz - 2 * pad, sz - 2 * pad, 3);
+                ctx.stroke();
+            } else {
+                // draw subtle grid lines for empty
+                ctx.fillStyle = 'rgba(255,255,255,0.02)';
+                ctx.fillRect(px, py, sz - 2 * pad, sz - 2 * pad);
+            }
+        }
+
+        /* nicer rounded rect helper */
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath();
+            c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r);
+            c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r);
+            c.arcTo(x, y, x + w, y, r);
+            c.closePath();
+        }
+
+        /* draw entire board scaled to BLOCK */
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // scale factor - internal canvas uses BLOCK pixels per cell
+            const S = BLOCK;
+            // draw grid cells
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    drawCell(ctx, c, r, S, grid[r][c] ? (grid[r][c] === 'X' ? 'Z' : grid[r][c]) : 0);
+                }
+            }
+            // draw current falling piece
+            if (current) {
+                const shape = current.shapes[current.rot];
+                for (const p of shape) {
+                    const x = current.x + p[0];
+                    const y = current.y + p[1];
+                    if (y >= 0) drawCell(ctx, x, y, S, current.type);
                 }
             }
         }
 
-        function drawOverlayOval(x0, y0, x1, y1, filled, borderWidth = 1) {
-            const ctx = overlayCanvas.getContext('2d');
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            ctx.fillStyle = hexToCSS(state.color);
-            const cx = (x0 + x1) / 2;
-            const cy = (y0 + y1) / 2;
-            const rx = Math.abs(x1 - x0) / 2;
-            const ry = Math.abs(y1 - y0) / 2;
-            if (rx < 0.5 || ry < 0.5) {
-                ctx.fillRect(Math.round(cx), Math.round(cy), 1, 1);
+        /* draw small preview (next) */
+        function drawPreview(whichCtx, type) {
+            whichCtx.clearRect(0, 0, whichCtx.canvas.width, whichCtx.canvas.height);
+            if (!type) return;
+            const S = 18;
+            const shapes = SHAPES[type];
+            const shape = shapes[0];
+            // center preview
+            const offsetX = 2;
+            const offsetY = 1;
+            for (const p of shape) {
+                const x = p[0] + offsetX;
+                const y = p[1] + offsetY;
+                // draw scaled
+                const px = x * S + 6;
+                const py = y * S + 4;
+                whichCtx.fillStyle = COLORS[type];
+                whichCtx.fillRect(px + 1, py + 1, S - 2, S - 2);
+                whichCtx.strokeStyle = 'rgba(0,0,0,0.6)';
+                whichCtx.lineWidth = 2;
+                whichCtx.strokeRect(px + 1, py + 1, S - 2, S - 2);
+            }
+        }
+
+        /* draw next pieces (just first in queue) */
+        function drawNext() {
+            drawPreview(nctx, nextQueue[0]);
+        }
+
+        /* draw hold */
+        function drawHold() {
+            drawPreview(hctx, holdPiece);
+        }
+
+        /* highscore management */
+        function loadHighscores() {
+            const data = localStorage.getItem('tetrisHighscores');
+            highscores = data ? JSON.parse(data) : [];
+            updateHighscoreList();
+        }
+
+        function saveHighscores() {
+            localStorage.setItem('tetrisHighscores', JSON.stringify(highscores));
+        }
+
+        function updateHighscoreList() {
+            const list = document.getElementById('hiscoresList');
+            list.innerHTML = '';
+            highscores.forEach((s, i) => {
+                const li = document.createElement('li');
+                li.textContent = s;
+                list.appendChild(li);
+            });
+        }
+
+        /* main loop */
+        function loop(now) {
+            if (!running) return;
+            if (!now) now = performance.now();
+            if (paused) {
+                requestAnimationFrame(loop);
                 return;
             }
-            const xMin = Math.floor(cx - rx), xMax = Math.ceil(cx + rx);
-            const yMin = Math.floor(cy - ry), yMax = Math.ceil(cy + ry);
-            const invRx2 = 1 / (rx * rx), invRy2 = 1 / (ry * ry);
-            if (filled) {
-                for (let y = yMin; y <= yMax; y++) {
-                    for (let x = xMin; x <= xMax; x++) {
-                        const dx = (x - cx), dy = (y - cy);
-                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                        if (val <= 1) ctx.fillRect(x, y, 1, 1);
-                    }
-                }
-            } else {
-                const bandWidth = borderWidth / Math.max(rx, ry);
-                for (let y = yMin; y <= yMax; y++) {
-                    for (let x = xMin; x <= xMax; x++) {
-                        const dx = (x - cx), dy = (y - cy);
-                        const val = (dx * dx) * invRx2 + (dy * dy) * invRy2;
-                        if (Math.abs(val - 1) <= bandWidth / 2) ctx.fillRect(x, y, 1, 1);
-                    }
-                }
-            }
-        }
-
-        function hexToCSS(hex) {
-            return hex;
-        }
-
-        function drawGridOverlay() {
-            const ctx = overlayCanvas.getContext('2d');
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            const w = overlayCanvas.width, h = overlayCanvas.height;
-            ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-            ctx.lineWidth = 0.03;
-            ctx.beginPath();
-            for (let x = 0; x <= w; x++) {
-                ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h);
-            }
-            for (let y = 0; y <= h; y++) {
-                ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5);
-            }
-            ctx.stroke();
-        }
-
-        let lastPos = null;
-
-        function onPointerDown(e) {
-            e.preventDefault();
-            const p = getPointerPixel(e, mainCanvas);
-            state.drawing = true;
-            state.start = { x: p.x, y: p.y };
-            lastPos = { x: p.x, y: p.y };
-
-            if (['pencil', 'eraser', 'fill', 'line', 'rect', 'oval'].includes(state.tool)) {
-                saveState();
-            }
-
-            if (state.tool === 'pencil') {
-                const rgba = hexToRGBA(state.color);
-                drawCirclePixels(p.x, p.y, state.strokeWidth / 2, rgba);
-                redrawMain();
-            } else if (state.tool === 'eraser') {
-                const rgba = [0, 0, 0, 0];
-                drawCirclePixels(p.x, p.y, state.strokeWidth / 2, rgba);
-                redrawMain();
-            } else if (state.tool === 'fill') {
-                const target = getPixelRGBA(p.x, p.y);
-                const replacement = hexToRGBA(state.color);
-                floodFill(p.x, p.y, target, replacement);
-                redrawMain();
-            } else if (state.tool === 'eyedropper') {
-                const picked = getPixelRGBA(p.x, p.y);
-                const hex = rgbaToHex(picked[0], picked[1], picked[2]);
-                setColor(hex);
-                // switch to previous tool
-                setTool(lastTool);
-            } else {
-                clearOverlay();
-                if (state.tool === 'line') drawOverlayLine(p.x, p.y, p.x, p.y);
-                if (state.tool === 'rect') drawOverlayRect(p.x, p.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
-                if (state.tool === 'oval') drawOverlayOval(p.x, p.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
-            }
-        }
-
-        function onPointerMove(e) {
-            if (!state.drawing) return;
-            const p = getPointerPixel(e, mainCanvas);
-            if (state.tool === 'pencil') {
-                const rgba = hexToRGBA(state.color);
-                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba, state.strokeWidth);
-                lastPos = { x: p.x, y: p.y };
-                redrawMain();
-            } else if (state.tool === 'eraser') {
-                const rgba = [0, 0, 0, 0];
-                drawLinePixels(lastPos.x, lastPos.y, p.x, p.y, rgba, state.strokeWidth);
-                lastPos = { x: p.x, y: p.y };
-                redrawMain();
-            } else if (state.tool === 'line') {
-                drawOverlayLine(state.start.x, state.start.y, p.x, p.y, state.strokeWidth);
-            } else if (state.tool === 'rect') {
-                drawOverlayRect(state.start.x, state.start.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
-            } else if (state.tool === 'oval') {
-                drawOverlayOval(state.start.x, state.start.y, p.x, p.y, fillShapes.checked, state.strokeWidth);
-            }
-        }
-
-        function onPointerUp(e) {
-            if (!state.drawing) return;
-            state.drawing = false;
-            const p = getPointerPixel(e, mainCanvas);
-            if (state.tool === 'pencil') {
-                // already drawn as we moved
-            } else if (state.tool === 'eraser') {
-                // already drawn as we moved
-            } else if (state.tool === 'line') {
-                const rgba = hexToRGBA(state.color);
-                drawLinePixels(state.start.x, state.start.y, p.x, p.y, rgba, state.strokeWidth);
-                redrawMain();
-                clearOverlay();
-            } else if (state.tool === 'rect') {
-                const rgba = hexToRGBA(state.color);
-                if (fillShapes.checked) {
-                    drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, true, 1);
+            const delta = now - lastDrop;
+            if (delta > dropInterval) {
+                lastDrop = now;
+                // auto drop
+                if (!collision(current, 0, 1)) {
+                    current.y++;
                 } else {
-                    drawRectPixels(state.start.x, state.start.y, p.x, p.y, rgba, false, state.strokeWidth);
+                    lockPiece();
                 }
-                redrawMain();
-                clearOverlay();
-            } else if (state.tool === 'oval') {
-                const rgba = hexToRGBA(state.color);
-                if (fillShapes.checked) {
-                    drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, true, 1);
-                } else {
-                    drawEllipsePixels(state.start.x, state.start.y, p.x, p.y, rgba, false, state.strokeWidth);
-                }
-                redrawMain();
-                clearOverlay();
+                draw();
             }
+            requestAnimationFrame(loop);
         }
 
-        mainCanvas.addEventListener('pointerdown', onPointerDown);
-        mainCanvas.addEventListener('pointermove', onPointerMove);
-        window.addEventListener('pointerup', onPointerUp);
-
-        overlayCanvas.addEventListener('pointerdown', onPointerDown);
-        overlayCanvas.addEventListener('pointermove', onPointerMove);
-        overlayCanvas.addEventListener('pointerup', onPointerUp);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'p' || e.key === 'P') setTool('pencil');
-            if (e.key === 'l' || e.key === 'L') setTool('line');
-            if (e.key === 'r' || e.key === 'R') setTool('rect');
-            if (e.key === 'o' || e.key === 'O') setTool('oval');
-            if (e.key === 'f' || e.key === 'F') setTool('fill');
-            if (e.key === 'i' || e.key === 'I') setTool('eyedropper');
+        /* input handling */
+        document.addEventListener('keydown', (e) => {
+            if (!running) return;
+            if (e.repeat) {
+                // allow repeated soft drop
+                if (e.key === 'ArrowDown') { softDrop(); draw(); }
+                return;
+            }
+            switch (e.key) {
+                case 'ArrowLeft': case 'a': case 'A': move(-1); draw(); break;
+                case 'ArrowRight': case 'd': case 'D': move(1); draw(); break;
+                case 'ArrowUp': case 'w': case 'W': rotatePiece(1); draw(); break;
+                case '?': case 'q': case 'Q': rotatePiece(-1); draw(); break;
+                case ' ': e.preventDefault(); hardDrop(); break;
+                case 'ArrowDown': case 's': case 'S': softDrop(); draw(); break;
+                case 'c': case 'C': hold(); break;
+                case 'p': case 'P': togglePause(); break;
+            }
         });
 
-        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        /* start/pause/reset buttons */
+        startBtn.addEventListener('click', () => {
+            if (!running) startGame();
+        });
+        pauseBtn.addEventListener('click', togglePause);
+        resetBtn.addEventListener('click', () => { resetGame(); });
+
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            pauseBtn.textContent = paused ? 'RESUME' : 'PAUSE';
+        }
+
+        /* initial setup */
+        resetGame();
+        draw();
+
+        /* small visual tweak: draw small preview of first next piece on load */
+        drawNext();
+        drawHold();
+
+        /* automatically start on first click for convenience */
+        canvas.addEventListener('dblclick', () => { if (!running) startGame(); });
+
+        /* spawn workflow: ensure the piece is placed at correct initial y offsets for different type (I and O) */
+        function spawnPiece(type) {
+            const rots = SHAPES[type];
+            const spawn = { type, rot: 0, shapes: rots };
+            // center hooks for 4x4 spawn area
+            spawn.x = 3;
+            // y offset so pieces appear partially above the board
+            spawn.y = -2;
+            // Tweak for O and I to match classic spawn
+            if (type === 'O') spawn.y = -1;
+            if (type === 'I') spawn.y = -3;
+            return spawn;
+        }
+
+        /* ensure the initial spawnFromQueue uses this spawnPiece function defined later */
+        function spawnFromQueue() {
+            refillQueue();
+            const t = nextQueue.shift();
+            current = spawnPiece(t);
+            if (collision(current)) {
+                running = false;
+                draw();
+                setTimeout(() => {
+                    highscores.push(score);
+                    highscores.sort((a, b) => b - a);   // descending
+                    if (highscores.length > 5) highscores.length = 5; // keep top 5
+                    saveHighscores();
+                    updateHighscoreList();
+
+                    alert('GAME OVER\nScore: ' + score);
+                }, 50);
+            }
+            canHold = true;
+            drawNext();
+            drawHold();
+        }
+
+        /* add small touch: click canvas to rotate */
+        canvas.addEventListener('click', () => {
+            if (!running) startGame();
+            if (running && !paused) {
+                rotatePiece(1);
+                draw();
+            }
+        });
+
+        /* use requestAnimationFrame to animate a subtle scanline overlay on canvas */
+        (function addScan() {
+            // optional visual effect: draw thin scanlines on board overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'scanlines';
+            const container = canvas.parentElement;
+            container.style.position = 'relative';
+            container.appendChild(overlay);
+        })();
+
+        loadHighscores();
     </script>
 </body>
 
