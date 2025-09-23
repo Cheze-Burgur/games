@@ -34,7 +34,7 @@
         .wrap {
             display: flex;
             gap: 28px;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
             padding: 30px;
         }
@@ -124,19 +124,22 @@
             line-height: 1.6;
         }
 
-        .footer {
+        .header {
+            background: var(--glass);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 10px;
             text-align: center;
-            margin-top: 18px;
-            font-size: 10px;
+            font-size: 9px;
             color: var(--mutedAccent);
         }
 
-        .footer a {
+        .header a {
             color: var(--accent);
             text-decoration: none;
         }
 
-        .footer a:hover {
+        .header a:hover {
             text-decoration: underline;
             text-decoration-style: dashed;
         }
@@ -184,6 +187,9 @@
         </div>
 
         <div class="side">
+
+            <div class="header"><strong>Tetris</strong> • Made by <a href="https://github.com/Cheze-Burgur"><strong style="color:var(--accent)">©Cheze</strong></a></div>
+
             <div class="panel">
                 <h3>NEXT</h3>
                 <canvas id="next" class="small-canvas" width="120" height="96"></canvas>
@@ -210,7 +216,7 @@
                         <div class="big" id="lines">0</div>
                     </div>
                 </div>
-                <div class="panel" id="hiscoresPanel">
+                <div class="panel" id="hiscoresPanel" style="margin-top:7px;">
                     <h3>HIGHSCORES</h3>
                     <ol id="hiscoresList" style="font-size:9px; line-height:1.6; margin:0; padding-left:18px;"></ol>
                 </div>
@@ -219,7 +225,9 @@
             <div class="panel controls">
                 <h3>CONTROLS</h3>
                 <div>
-                    <strong>< ></strong> / <strong>A D</strong> : Move
+                    <strong>
+                        <>
+                    </strong> / <strong>A D</strong> : Move
                 </div>
                 <div>
                     <strong>Q W</strong> / <strong>? Up</strong> : Rotate
@@ -238,7 +246,6 @@
                 </div>
             </div>
 
-            <div class="footer">Tetris • Made by <a href="https://github.com/Cheze-Burgur">©Cheze</a></div>
         </div>
     </div>
 
