@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HTML Editor</title>
+    <style>
+        :root {
+            --bg: #0f1720;
+            --panel: #0b1220;
+            --muted: #93a0b2;
+            --accent: #ff7a18;
+            --glass: rgba(255, 255, 255, 0.03);
+            --editor-bg: #071026;
+            --editor-fg: #e6eef6;
+            --preview-bg: #fbfdff;
+            --radius: 12px;
+            --gap: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial;
+            background: linear-gradient(180deg, #071428 0%, #0b1220 60%);
+            color: var(--editor-fg);
+            overflow: hidden;
+            /* disable scrolling */
+        }
+
+        body {
+            background: linear-gradient(180deg, #071428 0%, #0b1220 60%);
+            color: var(--editor-fg);
+        }
+
+        h1 {
+            color: #eaf6ff;
+            margin: 12px 0;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+
+        /* Main app layout */
+        .app {
+            display: grid;
+            grid-template-columns: 1fr 12px 1fr;
+            gap: var(--gap);
+            height: calc(100vh - 80px);
+            /* subtract header margin */
+            padding: 0 20px 20px 20px;
+            box-sizing: border-box;
+        }
+
+        /* Panels */
+        .panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Editor panel */
+        .panel.editor {
+            min-width: 360px;
+        }
+
+        /* Preview panel */
+        .panel.preview {
+            min-width: 360px;
+        }
+
+        /* toolbar at top of panels */
+        .toolbar,
+        .preview-top {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            flex-shrink: 0;
+        }
+
+
+        .brand {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #ffb874);
+            display: flex;
+            flex-direction: column;
+            /* stack vertically */
+            align-items: center;
+            justify-content: center;
+            color: #08202a;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .logo .line1,
+        .logo .line2 {
+            display: block;
+            line-height: 1;
+        }
+
+        .title {
+            font-weight: 600;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        /* buttons */
+        button,
+        select,
+        input[type=text] {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--editor-fg);
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent), #ffb874);
+            color: #08131a;
+            border: none;
+        }
+
+        .tog {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* editor area takes ~75% of vertical space */
+        .editor-area {
+            flex: 3;
+            /* grows more than toolbars/footers */
+            min-height: 0;
+            display: flex;
+        }
+
+        #editor {
+            flex: 1;
+            border: 0;
+            padding: 18px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background: var(--editor-bg);
+            color: var(--editor-fg);
+            resize: none;
+            outline: none;
+            overflow: auto;
+            /* scroll inside editor */
+        }
+
+        /* preview takes ~75% of vertical space */
+        .preview {
+            flex: 3;
+            /* grows more than top/footer */
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-iframe {
+            flex: 1;
+            border: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            overflow: auto;
+            /* scroll inside preview */
+        }
+
+        .preview-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(2, 6, 23, 0.05);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            flex-shrink: 0;
+            /* stays compact */
+        }
+
+        /* footers stay small */
+        .footer {
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.02);
+            background: linear-gradient(0deg, rgba(255, 255, 255, 0.01), transparent);
+            flex-shrink: 0;
+            /* stays compact */
+        }
+
+        /* splitter */
+        .split {
+            width: 12px;
+            cursor: col-resize;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .split .bar {
+            width: 4px;
+            height: 40%;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+        }
+
+        /* mobile collapse */
+        @media (max-width: 900px) {
+            .app {
+                grid-template-columns: 1fr;
+                grid-auto-rows: 1fr;
+            }
+
+            .split {
+                display: none;
+            }
+        }
+
+        /* scrollbar for editor */
+        #editor::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #editor::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+        }
+
+        .sample-tag {
+            font-family: ui-monospace, monospace;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            text-decoration-style: dashed;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="max-width:1400px;margin:0 auto">
+        <h1
+            style="color:#eaf6ff;margin:8px 0 18px;font-size:20px;font-weight:700;letter-spacing:-0.2px;padding-top: 20px;">
+            HTML Editor
+        </h1>
+
+        <div class="app">
+            <div class="panel editor" style="min-width:360px;">
+                <div class="toolbar">
+                    <div class="brand">
+                        <div class="logo">
+                            <span class="line1">HT</span>
+                            <span class="line2">ML</span>
+                        </div>
+                        <div class="title">Editor</div>
+                    </div>
+
+                    <div class="row">
+                        <button id="runBtn" class="btn-primary">Run (Ctrl+Enter)</button>
+                        <button id="exportBtn">Export .html (Ctrl+S)</button>
+                        <button id="resetBtn">Reset</button>
+                        <label class="tog" title="Auto-run preview"><input type="checkbox" id="autoRun" checked />
+                            Auto</label>
+                    </div>
+                </div>
+
+                <div class="editor-area">
+                    <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+                </div>
+
+                <div class="footer">
+                    Editor includes support for <span class="sample-tag">&lt;style&gt;</span> and <span
+                        class="sample-tag">&lt;script&gt;</span> tags.
+                    <div style="margin-top:6px;color:var(--muted)">Shortcuts: <em>Ctrl/Cmd + Enter</em> = Run •
+                        <em>Ctrl/Cmd + S</em> = Export<br>Made by <a
+                            href="https://github.com/Cheze-Burgur"><strong>@Cheze</strong></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="split" id="split">
+                <div class="bar"></div>
+            </div>
+
+            <div class="panel preview">
+                <div class="preview-top">
+                    <div style="font-weight:600">Preview</div>
+                    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+                        <label style="font-size:13px;color:var(--muted);">Here you can preview your webpage.</label>
+                    </div>
+                </div>
+
+                <iframe id="preview" class="preview-iframe"
+                    sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                <div class="footer">For security, preview is sandboxed, but it still allows for script execution.
+                    Download to run
+                    fully.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        const runBtn = document.getElementById('runBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const autoRun = document.getElementById('autoRun');
+        const split = document.getElementById('split');
+
+        // Editor is blank by default
+        editor.value = '';
+
+        function debounce(fn, ms) {
+            let t;
+            return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+        }
+
+        function updatePreview() {
+            preview.srcdoc = editor.value;
+        }
+
+        const debouncedUpdate = debounce(() => { if (autoRun.checked) updatePreview(); }, 400);
+
+        editor.addEventListener('input', debouncedUpdate);
+
+        runBtn.addEventListener('click', () => { updatePreview(); flash(runBtn); });
+
+        function exportHTML() {
+            const filename = prompt('Filename (without extension):', 'page') || 'page';
+            const blob = new Blob([editor.value], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename + '.html';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        }
+
+        exportBtn.addEventListener('click', exportHTML);
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Reset editor? This will clear all content.')) { editor.value = ''; updatePreview(); }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const c = e.ctrlKey || e.metaKey;
+            if (c && e.key === 'Enter') { e.preventDefault(); updatePreview(); flash(runBtn); }
+            if (c && (e.key === 's' || e.key === 'S')) { e.preventDefault(); exportHTML(); }
+        });
+
+        function flash(el) { el.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.96)' }, { transform: 'scale(1)' }], { duration: 180 }); }
+
+        updatePreview();
+
+        split.style.cursor = 'default';
+
+        let initial = editor.value;
+        window.addEventListener('beforeunload', e => { if (editor.value !== initial) { e.preventDefault(); e.returnValue = 'Unsaved changes'; } });
+
+    </script>
+</body>
+
+</html>`
