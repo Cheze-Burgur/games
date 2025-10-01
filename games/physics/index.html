@@ -169,8 +169,8 @@
                     </div>
                     <div style="display:flex;gap:6px; margin-top:6px;">
                         <button id="toggleVel" class="btn" style="opacity: 0.7;">Indicators (I)</button>
-                        <button id="toggleProperties" class="btn" style="opacity: 0.7;">Properties (P)</button>
                         <button id="toggleCoords" class="btn" style="opacity: 0.7;">Coordinates (O)</button>
+                        <button id="toggleProperties" class="btn" style="opacity: 0.7;">Properties (P)</button>
                     </div>
                     <div class="tiny" style="margin-top:6px; text-align:right;">
                         Bodies: <span id="count">0</span> &nbsp; • &nbsp; FPS: <span id="fps">0</span>
@@ -219,9 +219,9 @@
         const toggleCoords = document.getElementById('toggleCoords');
 
         /* Globals & parameters */
-        let G = parseFloat(gRange?.value ?? 0.5);       // gravitational constant (tunable)
+        let G = parseFloat(gRange?.value ?? 2);       // gravitational constant (tunable)
         let timeScale = parseFloat(timeRange?.value ?? 1);
-        const softening = 1.5; // softening distance to avoid singularities
+        const softening = 1.25; // softening distance to avoid singularities
         const MAX_BODIES = 800; // safety cap
         const MERGE_ON_COLLIDE = true;
 
