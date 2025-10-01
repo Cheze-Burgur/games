@@ -163,11 +163,14 @@
 
                 <div style="display:flex;flex-direction:column;align-items:flex-end;">
                     <div style="display:flex;gap:6px;">
-                        <button id="pauseBtn" class="btn">Pause (ESC)</button>
+                        <button id="pauseBtn" class="btn">Pause Sim (ESC)</button>
                         <button id="clearBtn" class="btn">Clear (C)</button>
                         <button id="viewBtn" class="btn">Recenter (R)</button>
+                    </div>
+                    <div style="display:flex;gap:6px; margin-top:6px;">
                         <button id="toggleVel" class="btn" style="opacity: 0.7;">Indicators (I)</button>
                         <button id="toggleProperties" class="btn" style="opacity: 0.7;">Properties (P)</button>
+                        <button id="toggleCoords" class="btn" style="opacity: 0.7;">Coordinates (O)</button>
                     </div>
                     <div class="tiny" style="margin-top:6px; text-align:right;">
                         Bodies: <span id="count">0</span> &nbsp; • &nbsp; FPS: <span id="fps">0</span>
@@ -176,17 +179,18 @@
             </div>
         </div>
     </div>
-
-    <div class="help panel">
-        <strong class="accent">Controls:</strong><br>
-        WASD / Arrow keys → Move camera<br>
-        Scroll → Zoom<br>
-        Left Click → Spawn body<br>
-        Hold left click → Charge (drag to give velocity)<br>
-        <strong class="accent">Tips:</strong><br>
-        Bodies merge on collision.<br>
-        Velocity is preserved on merge.<br>
-        <div class="tiny">Less bodies = better performance.</div>
+    <div>
+        <div class="help panel">
+            <strong class="accent">Controls:</strong><br>
+            WASD / Arrow keys → Move camera<br>
+            Scroll → Zoom<br>
+            Left Click → Spawn body<br>
+            Hold left click → Charge (drag to give velocity)<br>
+            <strong class="accent">Tips:</strong><br>
+            Bodies merge on collision.<br>
+            Velocity is preserved on merge.<br>
+            <div class="tiny">Less bodies = better performance.</div>
+        </div>
     </div>
 
     <div class="footer tiny">Made by <a href="https://github.com/Cheze-Burgur">@Cheze</a></div>
@@ -200,23 +204,7 @@
         addEventListener('resize', resize);
         resize();
 
-        /* Globals & parameters */
-        let G = parseFloat(document.getElementById('gRange').value); // gravitational constant (tunable)
-        let timeScale = parseFloat(document.getElementById('timeRange').value);
-        const softening = 1.5; // softening distance to avoid singularities
-        const MAX_BODIES = 800; // safety cap
-        const MERGE_ON_COLLIDE = true;
-
-        let showVelocity = false;
-        let showProperties = false;
-        let paused = false;
-
-        /* World state */
-        let bodies = []; // each: {x,y,vx,vy,mass,r,color}
-        let camera = { x: 0, y: 0, zoom: 1 };
-        let keys = {};
-
-        /* UI elements */
+        /* UI elements (grab these first before using their values) */
         const gRange = document.getElementById('gRange');
         const gValue = document.getElementById('gValue');
         const timeRange = document.getElementById('timeRange');
@@ -228,14 +216,38 @@
         const viewBtn = document.getElementById('viewBtn');
         const toggleVel = document.getElementById('toggleVel');
         const toggleProperties = document.getElementById('toggleProperties');
+        const toggleCoords = document.getElementById('toggleCoords');
 
+        /* Globals & parameters */
+        let G = parseFloat(gRange?.value ?? 0.5);       // gravitational constant (tunable)
+        let timeScale = parseFloat(timeRange?.value ?? 1);
+        const softening = 1.5; // softening distance to avoid singularities
+        const MAX_BODIES = 800; // safety cap
+        const MERGE_ON_COLLIDE = true;
+
+        let showVelocity = false;
+        let showProperties = false;
+        let showCoords = false; // <--- was missing
+        let paused = false;
+
+        /* World state */
+        let bodies = []; // each: {x,y,vx,vy,mass,r,color}
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let keys = {};
+
+        /* Sync UI initial labels (so the displayed values match the sliders on load) */
+        if (gValue) gValue.textContent = G.toFixed(2);
+        if (timeValue) timeValue.textContent = timeScale.toFixed(2);
+
+        /* UI event wiring */
         gRange.addEventListener('input', e => { G = parseFloat(e.target.value); gValue.textContent = G.toFixed(2); });
         timeRange.addEventListener('input', e => { timeScale = parseFloat(e.target.value); timeValue.textContent = timeScale.toFixed(2); });
-        pauseBtn.addEventListener('click', _ => { paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
+        pauseBtn.addEventListener('click', _ => { paused = !paused; pauseBtn.textContent = paused ? 'Resume Sim (ESC)' : 'Pause Sim (ESC)'; });
         clearBtn.addEventListener('click', _ => { bodies = []; });
         viewBtn.addEventListener('click', _ => { camera.x = 0; camera.y = 0; camera.zoom = 1; });
         toggleVel.addEventListener('click', _ => { showVelocity = !showVelocity; toggleVel.style.opacity = showVelocity ? '1' : '0.7'; });
         toggleProperties.addEventListener('click', () => { showProperties = !showProperties; toggleProperties.style.opacity = showProperties ? '1' : '0.7'; });
+        toggleCoords.addEventListener('click', () => { showCoords = !showCoords; toggleCoords.style.opacity = showCoords ? '1' : '0.7'; });
 
         /* Input: WASD camera movement */
         addEventListener('keydown', e => {
@@ -245,28 +257,28 @@
             switch (k) {
                 case 'escape':
                     paused = !paused;
-                    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+                    pauseBtn.textContent = paused ? 'Resume Sim (ESC)' : 'Pause Sim (ESC)';
                     break;
                 case 'c':
                     bodies = [];
                     break;
                 case 'r':
-                    camera.x = 0;
-                    camera.y = 0;
-                    camera.zoom = 1;
-                    break;
                 case 'h':
                     camera.x = 0;
                     camera.y = 0;
                     camera.zoom = 1;
                     break;
-                case 'i': // optional, if you want a dedicated toggle key for indicators
+                case 'i': // toggle velocity indicator
                     showVelocity = !showVelocity;
                     toggleVel.style.opacity = showVelocity ? '1' : '0.7';
                     break;
                 case 'p':
                     showProperties = !showProperties;
                     toggleProperties.style.opacity = showProperties ? '1' : '0.7';
+                    break;
+                case 'o':
+                    showCoords = !showCoords;
+                    toggleCoords.style.opacity = showCoords ? '1' : '0.7';
                     break;
             }
         });
@@ -492,32 +504,46 @@
                 ctx.moveTo(s.x, s.y);
                 ctx.lineTo(s.x + vx * 0.6, s.y + vy * 0.6);
                 ctx.strokeStyle = 'rgba(190,255,255,0.6)';
-                ctx.lineWidth = 1.2;
+                ctx.lineWidth = 5;
                 ctx.stroke();
             }
             if (showProperties) {
                 ctx.fillStyle = '#ffffff';
                 ctx.font = `${Math.max(10, Math.min(14, b.r * camera.zoom))}px Inter, system-ui`;
                 ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                ctx.textBaseline = 'top';
 
                 const velMag = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-                const displayMass = (b.mass / 1000).toFixed(1);   // grams → kg
-                const displayVel = velMag.toFixed(1);   // km/s
-                const displayRad = (b.r / 1000).toFixed(1);      // meters → km
-                const text = `m:${displayMass} kg  v:${displayVel} km/s  r:${displayRad} km`;
+                const displayMass = (b.mass / 1000).toFixed(1);
+                const displayVel = velMag.toFixed(1);
+                const displayRad = (b.r / 10).toFixed(1);
+                const propText = `m:${displayMass} MT  v:${displayVel} km/s  r:${displayRad} km`;
 
-                // If radius is too small, display text outside the circle
-                const sr = Math.max(1, b.r * camera.zoom);
-                const padding = 8;
-                if (sr * 2 < ctx.measureText(text).width) {
-                    // outside
-                    ctx.textBaseline = 'top';
-                    ctx.fillText(text, s.x, s.y + sr + padding);
+                const padding = 4;
+                const textY = s.y + sr + padding;
+                ctx.fillText(propText, s.x, textY);
+
+                // Add extra vertical spacing so coordinate text doesn't overlap
+                textOffsetY = 5 * (ctx.measureText(propText).actualBoundingBoxAscent + padding);
+            }
+
+            if (showCoords) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `${Math.max(10, Math.min(14, b.r * camera.zoom))}px Inter, system-ui`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+
+                const coordText = `x:${b.x.toFixed(0)} y:${-(b.y.toFixed(0))}`;
+                const padding = 4;
+                let textY;
+
+                if (showProperties) {
+                    textY = s.y + sr + padding + textOffsetY; // below property text
                 } else {
-                    // inside
-                    ctx.fillText(text, s.x, s.y);
+                    textY = s.y + sr + padding; // just below the circle
                 }
+
+                ctx.fillText(coordText, s.x, textY);
             }
         }
 
@@ -619,7 +645,7 @@
 
         /* grid drawing */
         function drawGrid() {
-            const step = 100;
+            const step = 50;
             const left = camera.x - (canvas.width / 2) / camera.zoom;
             const right = camera.x + (canvas.width / 2) / camera.zoom;
             const top = camera.y - (canvas.height / 2) / camera.zoom;
@@ -628,7 +654,7 @@
             const startX = Math.floor(left / step) * step;
             const startY = Math.floor(top / step) * step;
 
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 3;
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.beginPath();
             for (let x = startX; x <= right; x += step) {
@@ -655,13 +681,14 @@
         /* initial scene */
         function initScene() {
             bodies = [];
-            spawnBody(-160, 0, 5, 0, 1000, 24);
-            spawnBody(160, 0, -5, 0, 1000, 24);
-            spawnBody(0, -160, 0, 5, 1000, 24);
-            spawnBody(0, 160, 0, -5, 1000, 24);
+            spawnBody(-150, 0, 10, -2.5, 1000, 24);
+            spawnBody(150, 0, -10, 2.5, 1000, 24);
+            spawnBody(0, -150, 2.5, 10, 1000, 24);
+            spawnBody(0, 150, -2.5, -10, 1000, 24);
         }
         initScene();
         requestAnimationFrame(update);
+
     </script>
 </body>
 
