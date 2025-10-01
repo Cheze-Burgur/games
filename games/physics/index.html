@@ -151,13 +151,13 @@
             <div style="display:flex;gap:12px;align-items:center">
                 <div class="stat">
                     <span class="label">Gravity (G)</span>
-                    <input id="gRange" class="slider" type="range" min="0" max="2" step="0.01" value="1">
+                    <input id="gRange" class="slider" type="range" min="0" max="5" step="0.1" value="1">
                     <span class="tiny">G: <span id="gValue">1</span></span>
                 </div>
 
                 <div class="stat">
                     <span class="label">Sim Speed</span>
-                    <input id="timeRange" class="slider" type="range" min="0.1" max="3" step="0.05" value="1">
+                    <input id="timeRange" class="slider" type="range" min="0.1" max="3" step="0.1" value="1">
                     <span class="tiny">x<span id="timeValue">1.00</span></span>
                 </div>
 
@@ -222,7 +222,7 @@
         let G = parseFloat(gRange?.value ?? 2);       // gravitational constant (tunable)
         let timeScale = parseFloat(timeRange?.value ?? 1);
         const softening = 1.25; // softening distance to avoid singularities
-        const MAX_BODIES = 800; // safety cap
+        const MAX_BODIES = 1000; // safety cap
         const MERGE_ON_COLLIDE = true;
 
         let showVelocity = false;
@@ -373,7 +373,7 @@
             const oldZoom = camera.zoom;
             const zoomFactor = 1.08;
             let newZoom = camera.zoom * (delta > 0 ? 1 / zoomFactor : zoomFactor);
-            newZoom = Math.max(0.12, Math.min(6, newZoom));
+            newZoom = Math.max(0.1, Math.min(5, newZoom));
             const mx = e.clientX, my = e.clientY;
             const worldBefore = screenToWorld(mx, my);
             camera.zoom = newZoom;
