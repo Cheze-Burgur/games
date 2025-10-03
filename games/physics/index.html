@@ -6,6 +6,23 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Space Physics - A Simulation</title>
     <style>
+        @media (max-width: 600px) {
+            .modal {
+                width: 95%;
+                padding: 14px;
+                font-size: 14px;
+            }
+
+            .modal label {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .modal input {
+                width: 100%;
+            }
+        }
+
         :root {
             --bg: #071421;
             --panel: #0f2430;
@@ -54,6 +71,66 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
             color: var(--muted);
             font-size: 13px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .modal label {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .modal input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 4px 6px;
+            width: 100px;
+            color: white;
+            text-align: right;
+        }
+
+        .modal .actions {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -55%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
         }
 
         .controls {
@@ -140,10 +217,30 @@
         .btn:hover {
             transform: translateY(-1px);
         }
+
+        .btn.accent {
+            background: var(--accent);
+            color: #072027;
+            border: none;
+        }
+
+        .btn.accent:hover {
+            filter: brightness(1.1);
+        }
+
+        #backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1500;
+        }
     </style>
 </head>
 
 <body>
+    <div id="backdrop"></div>
+
     <canvas id="canvas"></canvas>
 
     <div class="topbar">
@@ -196,6 +293,20 @@
     </div>
 
     <div class="footer tiny">Made by <a href="https://github.com/Cheze-Burgur">@Cheze</a></div>
+
+    <div id="bodyMenu" class="modal panel" style="display: none;">
+        <h3>Edit Body</h3>
+        <label>X: <input id="bodyX" type="number"></label><br>
+        <label>Y: <input id="bodyY" type="number"></label><br>
+        <label>VX (km/s): <input id="bodyVX" type="number"></label><br>
+        <label>VY (km/s): <input id="bodyVY" type="number"></label><br>
+        <label>Mass (Metric Tons): <input id="bodyMass" type="number"></label><br>
+        <label>Radius (km): <input id="bodyR" type="number"></label><br>
+        <div style="margin-top:10px;">
+            <button id="applyBodyBtn" class="btn accent">Apply</button>
+            <button id="closeBodyBtn" class="btn">Close</button>
+        </div>
+    </div>
 
     <script>
         /* ========== Setup ========== */
@@ -255,33 +366,34 @@
         addEventListener('keydown', e => {
             const k = e.key.toLowerCase();
             keys[k] = true;
-
-            switch (k) {
-                case 'escape':
-                    paused = !paused;
-                    pauseBtn.textContent = paused ? 'Resume Sim (ESC)' : 'Pause Sim (ESC)';
-                    break;
-                case 'c':
-                    bodies = [];
-                    break;
-                case 'r':
-                case 'h':
-                    camera.x = 0;
-                    camera.y = 0;
-                    camera.zoom = 1;
-                    break;
-                case 'i': // toggle velocity indicator
-                    showVelocity = !showVelocity;
-                    toggleVel.style.opacity = showVelocity ? '1' : '0.7';
-                    break;
-                case 'p':
-                    showProperties = !showProperties;
-                    toggleProperties.style.opacity = showProperties ? '1' : '0.7';
-                    break;
-                case 'o':
-                    showCoords = !showCoords;
-                    toggleCoords.style.opacity = showCoords ? '1' : '0.7';
-                    break;
+            if (!menuOpen) {
+                switch (k) {
+                    case 'escape':
+                        paused = !paused;
+                        pauseBtn.textContent = paused ? 'Resume Sim (ESC)' : 'Pause Sim (ESC)';
+                        break;
+                    case 'c':
+                        bodies = [];
+                        break;
+                    case 'r':
+                    case 'h':
+                        camera.x = 0;
+                        camera.y = 0;
+                        camera.zoom = 1;
+                        break;
+                    case 'i': // toggle velocity indicator
+                        showVelocity = !showVelocity;
+                        toggleVel.style.opacity = showVelocity ? '1' : '0.7';
+                        break;
+                    case 'p':
+                        showProperties = !showProperties;
+                        toggleProperties.style.opacity = showProperties ? '1' : '0.7';
+                        break;
+                    case 'o':
+                        showCoords = !showCoords;
+                        toggleCoords.style.opacity = showCoords ? '1' : '0.7';
+                        break;
+                }
             }
         });
         addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
@@ -295,6 +407,18 @@
         let charging = null;
         let activePointerId = null;
 
+        let menuOpen = false;
+        let selectedBody = null;
+        const bodyMenu = document.getElementById('bodyMenu');
+        const bodyX = document.getElementById('bodyX');
+        const bodyY = document.getElementById('bodyY');
+        const bodyVX = document.getElementById('bodyVX');
+        const bodyVY = document.getElementById('bodyVY');
+        const bodyMass = document.getElementById('bodyMass');
+        const bodyR = document.getElementById('bodyR');
+        const applyBodyBtn = document.getElementById('applyBodyBtn');
+        const closeBodyBtn = document.getElementById('closeBodyBtn');
+
         function screenToWorld(sx, sy) {
             return {
                 x: camera.x + (sx - canvas.width / 2) / camera.zoom,
@@ -304,16 +428,32 @@
 
         // Event handlers
         canvas.addEventListener('pointerdown', (e) => {
-            // only respond to primary button
-            if (e.button !== 0) return;
-            isDown = true;
-            activePointerId = e.pointerId;
-            downScreen = { x: e.clientX, y: e.clientY };
-            nowScreen = { ...downScreen };
-            downWorld = screenToWorld(e.clientX, e.clientY);
-            chargeStart = performance.now();
-            charging = 2;
-            canvas.setPointerCapture(e.pointerId);
+            if (menuOpen) return; // ignore if menu open
+
+            // left click
+            if (e.button === 0) {
+                const worldPos = screenToWorld(e.clientX, e.clientY);
+                // check if clicked on body
+                for (let i = bodies.length - 1; i >= 0; i--) {
+                    const b = bodies[i];
+                    const dx = worldPos.x - b.x;
+                    const dy = worldPos.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= b.r) {
+                        openBodyMenu(b);
+                        return;
+                    }
+                }
+                // else → begin spawn logic
+                isDown = true;
+                activePointerId = e.pointerId;
+                downScreen = { x: e.clientX, y: e.clientY };
+                nowScreen = { ...downScreen };
+                downWorld = screenToWorld(e.clientX, e.clientY);
+                chargeStart = performance.now();
+                charging = 2;
+                canvas.setPointerCapture(e.pointerId);
+            }
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -622,14 +762,16 @@
             // camera movement
             const camSpeed = 480 / Math.sqrt(camera.zoom);
             let mvx = 0, mvy = 0;
-            if (keys['w'] || keys['arrowup']) mvy -= 1;
-            if (keys['s'] || keys['arrowdown']) mvy += 1;
-            if (keys['a'] || keys['arrowleft']) mvx -= 1;
-            if (keys['d'] || keys['arrowright']) mvx += 1;
-            if (mvx !== 0 || mvy !== 0) {
-                const len = Math.hypot(mvx, mvy) || 1;
-                camera.x += (mvx / len) * camSpeed * dt;
-                camera.y += (mvy / len) * camSpeed * dt;
+            if (!menuOpen) {
+                if (keys['w'] || keys['arrowup']) mvy -= 1;
+                if (keys['s'] || keys['arrowdown']) mvy += 1;
+                if (keys['a'] || keys['arrowleft']) mvx -= 1;
+                if (keys['d'] || keys['arrowright']) mvx += 1;
+                if (mvx !== 0 || mvy !== 0) {
+                    const len = Math.hypot(mvx, mvy) || 1;
+                    camera.x += (mvx / len) * camSpeed * dt;
+                    camera.y += (mvy / len) * camSpeed * dt;
+                }
             }
 
             if (!paused) {
@@ -700,6 +842,41 @@
             ctx.moveTo(0, c.y); ctx.lineTo(canvas.width, c.y);
             ctx.stroke();
         }
+
+        function openBodyMenu(body) {
+            selectedBody = body;
+            menuOpen = true;
+            paused = true;
+            pauseBtn.textContent = "Resume Sim (ESC)";
+            // populate fields
+            bodyX.value = body.x.toFixed(0);
+            bodyY.value = -(body.y.toFixed(0));
+            bodyVX.value = body.vx.toFixed(1);
+            bodyVY.value = -(body.vy.toFixed(1));
+            bodyMass.value = body.mass.toFixed(1);
+            bodyR.value = body.r.toFixed(1);
+            bodyMenu.style.display = "block";
+            document.getElementById("backdrop").style.display = "block";
+        }
+
+        function closeBodyMenu() {
+            bodyMenu.style.display = "none";
+            document.getElementById("backdrop").style.display = "none";
+            menuOpen = false;
+            selectedBody = null;
+        }
+
+        applyBodyBtn.addEventListener('click', () => {
+            if (!selectedBody) return;
+            selectedBody.x = parseFloat(bodyX.value);
+            selectedBody.y = -(parseFloat(bodyY.value));
+            selectedBody.vx = parseFloat(bodyVX.value);
+            selectedBody.vy = -(parseFloat(bodyVY.value));
+            selectedBody.mass = parseFloat(bodyMass.value);
+            selectedBody.r = parseFloat(bodyR.value);
+            closeBodyMenu();
+        });
+        closeBodyBtn.addEventListener('click', closeBodyMenu);
 
         /* initial scene */
         function initScene() {
