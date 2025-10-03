@@ -228,6 +228,10 @@
             filter: brightness(1.1);
         }
 
+        #deleteBodyBtn:hover {
+            filter: brightness(0.9);
+        }
+
         #backdrop {
             display: none;
             position: fixed;
@@ -305,6 +309,7 @@
         <div style="margin-top:10px;">
             <button id="applyBodyBtn" class="btn accent">Apply</button>
             <button id="closeBodyBtn" class="btn">Close</button>
+            <button id="deleteBodyBtn" class="btn" style="float:right; background: #ff4c4c; color: white; border: none;">Delete Body</button>
         </div>
     </div>
 
@@ -418,6 +423,7 @@
         const bodyR = document.getElementById('bodyR');
         const applyBodyBtn = document.getElementById('applyBodyBtn');
         const closeBodyBtn = document.getElementById('closeBodyBtn');
+        const deleteBodyBtn = document.getElementById('deleteBodyBtn');
 
         function screenToWorld(sx, sy) {
             return {
@@ -877,6 +883,12 @@
             closeBodyMenu();
         });
         closeBodyBtn.addEventListener('click', closeBodyMenu);
+        deleteBodyBtn.addEventListener('click', () => {
+            if (!selectedBody) return;
+            const index = bodies.indexOf(selectedBody);
+            if (index !== -1) bodies.splice(index, 1);
+            closeBodyMenu();
+        });
 
         /* initial scene */
         function initScene() {
