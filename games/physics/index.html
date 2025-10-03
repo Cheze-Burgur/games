@@ -300,7 +300,7 @@
         <label>Y: <input id="bodyY" type="number"></label><br>
         <label>VX (km/s): <input id="bodyVX" type="number"></label><br>
         <label>VY (km/s): <input id="bodyVY" type="number"></label><br>
-        <label>Mass (Metric Tons): <input id="bodyMass" type="number"></label><br>
+        <label>Mass (kg): <input id="bodyMass" type="number"></label><br>
         <label>Radius (km): <input id="bodyR" type="number"></label><br>
         <div style="margin-top:10px;">
             <button id="applyBodyBtn" class="btn accent">Apply</button>
@@ -332,7 +332,7 @@
         const toggleCoords = document.getElementById('toggleCoords');
 
         /* Globals & parameters */
-        let G = parseFloat(gRange?.value ?? 2);       // gravitational constant (tunable)
+        let G = parseFloat(gRange?.value ?? 2); // gravitational constant (tunable)
         let timeScale = parseFloat(timeRange?.value ?? 1);
         const softening = 1.25; // softening distance to avoid singularities
         const MAX_BODIES = 1000; // safety cap
@@ -677,10 +677,10 @@
                 ctx.textBaseline = 'top';
 
                 const velMag = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-                const displayMass = (b.mass / 1000).toFixed(1);
+                const displayMass = (b.mass).toFixed(1);
                 const displayVel = velMag.toFixed(1);
                 const displayRad = (b.r / 10).toFixed(1);
-                const propText = `m:${displayMass} MT  v:${displayVel} km/s  r:${displayRad} km`;
+                const propText = `m:${displayMass} kg  v:${displayVel} km/s  r:${displayRad} km`;
 
                 const padding = 4;
                 const textY = s.y + sr + padding;
