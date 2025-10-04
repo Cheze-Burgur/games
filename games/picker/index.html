@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Google Color Picker</title>
+    <style>
+        :root {
+            --bg: #1b1b1b;
+            --panel: #272727;
+            --muted: #9aa4ad;
+            --accent: #6ea2ff;
+            --card: #2f2f2f;
+            --glass: rgba(255, 255, 255, 0.04);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 20px;
+            font-family: Inter, Arial, sans-serif;
+            background: linear-gradient(180deg, #111 0%, #131313 100%);
+            color: #e6eef8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .picker {
+            width: 640px;
+            background: var(--panel);
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .header .meta {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .main-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* saturation box and hue column */
+        .sat {
+            flex: 1;
+            position: relative;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            min-width: 360px;
+            height: 220px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+        }
+
+        .hue {
+            width: 36px;
+            height: 220px;
+            border-radius: 6px;
+            position: relative;
+            background: linear-gradient(to top,
+                    red, orange, yellow, lime, cyan, blue, magenta, red);
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+        }
+
+        /* hue indicator */
+        .hue-indicator {
+            position: absolute;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+            transform: translateY(-50%);
+            background: transparent;
+            pointer-events: none;
+        }
+
+        /* lower row: hex & preview */
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .preview {
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+            flex: 0 0 56px;
+        }
+
+        .hex-wrap {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--card);
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            outline: none;
+        }
+
+        button.copy {
+            background: linear-gradient(180deg, #4b77ff, #2563ff);
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .vals {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .val {
+            background: var(--glass);
+            padding: 8px;
+            border-radius: 6px;
+            color: var(--muted);
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .val strong {
+            display: block;
+            color: #fff;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        /* canvas pointer style */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* small mobile adjustments */
+        @media (max-width:720px) {
+            .picker {
+                width: 94vw;
+            }
+
+            .main-row {
+                flex-direction: column;
+                align-items: stretch
+            }
+
+            .hue {
+                width: 100%;
+                height: 28px;
+                background: linear-gradient(to right,
+                        red, orange, yellow, lime, cyan, blue, magenta, red);
+                order: 2
+            }
+
+            .sat {
+                height: 200px
+            }
+
+            .hue-indicator {
+                right: auto;
+                left: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="picker" role="application" aria-label="Color picker">
+        <div class="header">
+            <h2>Color picker</h2>
+            <div class="meta">Click & drag to pick — copy hex or type a hex</div>
+        </div>
+
+        <div class="main-row">
+            <div class="sat" id="satBox" aria-label="Saturation and brightness area">
+                <canvas id="satCanvas"></canvas>
+            </div>
+
+            <div class="hue" id="hueBar" aria-label="Hue slider">
+                <div class="hue-indicator" id="hueInd"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="preview" id="preview" aria-hidden="true"></div>
+
+            <div class="hex-wrap">
+                <input id="hexInput" type="text" aria-label="HEX color" value="#0000ff">
+                <button class="copy" id="copyBtn" title="Copy hex">Copy</button>
+            </div>
+        </div>
+
+        <div class="vals" aria-hidden="false">
+            <div class="val"><strong>RGB</strong><span id="rgbVal">0, 0, 255</span></div>
+            <div class="val"><strong>CMYK</strong><span id="cmykVal">100%, 100%, 0%, 0%</span></div>
+            <div class="val"><strong>HSV</strong><span id="hsvVal">240°, 100%, 100%</span></div>
+            <div class="val"><strong>HSL</strong><span id="hslVal">240°, 100%, 50%</span></div>
+        </div>
+    </div>
+
+    <script>
+        /* ---------- Helpers: color conversions ---------- */
+
+        function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+
+        function hsvToRgb(h, s, v) {
+            s /= 100; v /= 100;
+            const c = v * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = v - c;
+            let r1 = 0, g1 = 0, b1 = 0;
+            if (h >= 0 && h < 60) { r1 = c; g1 = x; b1 = 0; }
+            else if (h < 120) { r1 = x; g1 = c; b1 = 0; }
+            else if (h < 180) { r1 = 0; g1 = c; b1 = x; }
+            else if (h < 240) { r1 = 0; g1 = x; b1 = c; }
+            else if (h < 300) { r1 = x; g1 = 0; b1 = c; }
+            else { r1 = c; g1 = 0; b1 = x; }
+            const r = Math.round((r1 + m) * 255);
+            const g = Math.round((g1 + m) * 255);
+            const b = Math.round((b1 + m) * 255);
+            return [r, g, b];
+        }
+
+        function rgbToHex([r, g, b]) {
+            return "#" + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+
+        function hexToRgb(hex) {
+            if (!hex) return null;
+            hex = hex.trim().replace('#', '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(s => s + s).join('');
+            }
+            if (hex.length !== 6) return null;
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+            return [r, g, b];
+        }
+
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+            const d = mx - mn;
+            let h = 0;
+            if (d === 0) h = 0;
+            else if (mx === r) h = ((g - b) / d) % 6;
+            else if (mx === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+            const v = Math.round(mx * 100);
+            const s = Math.round(mx === 0 ? 0 : (d / mx) * 100);
+            return [h, s, v];
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+            const d = mx - mn;
+            let h = 0;
+            if (d === 0) h = 0;
+            else if (mx === r) h = ((g - b) / d) % 6;
+            else if (mx === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+            const l = (mx + mn) / 2;
+            const s = Math.round(d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1)) * 100);
+            return [h, s, Math.round(l * 100)];
+        }
+
+        function rgbToCmyk(r, g, b) {
+            const r1 = r / 255, g1 = g / 255, b1 = b / 255;
+            const k = 1 - Math.max(r1, g1, b1);
+            if (k === 1) return [0, 0, 0, 100];
+            const c = Math.round(((1 - r1 - k) / (1 - k)) * 100);
+            const m = Math.round(((1 - g1 - k) / (1 - k)) * 100);
+            const y = Math.round(((1 - b1 - k) / (1 - k)) * 100);
+            return [c, m, y, Math.round(k * 100)];
+        }
+
+        /* ---------- DOM elements & state ---------- */
+        const satCanvas = document.getElementById('satCanvas');
+        const satBox = document.getElementById('satBox');
+        const hueBar = document.getElementById('hueBar');
+        const hueInd = document.getElementById('hueInd');
+        const hexInput = document.getElementById('hexInput');
+        const copyBtn = document.getElementById('copyBtn');
+        const preview = document.getElementById('preview');
+
+        const rgbVal = document.getElementById('rgbVal');
+        const cmykVal = document.getElementById('cmykVal');
+        const hsvVal = document.getElementById('hsvVal');
+        const hslVal = document.getElementById('hslVal');
+
+        const ctx = satCanvas.getContext('2d');
+
+        let state = {
+            hue: 240,    // 0..360
+            sat: 100,    // 0..100
+            val: 100,    // 0..100
+            pickX: null, // CSS px coords inside canvas
+            pickY: null
+        };
+
+        /* ---------- Canvas sizing (handles high-DPI) ---------- */
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = satBox.getBoundingClientRect();
+            satCanvas.style.width = rect.width + 'px';
+            satCanvas.style.height = rect.height + 'px';
+            satCanvas.width = Math.round(rect.width * dpr);
+            satCanvas.height = Math.round(rect.height * dpr);
+            // make drawing coordinates use CSS pixels (not device pixels)
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            drawSaturation();
+            drawPointer();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        /* ---------- Drawing the saturation/brightness box ---------- */
+        function drawSaturation() {
+            const w = satCanvas.clientWidth;
+            const h = satCanvas.clientHeight;
+            // base hue color fill
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = `hsl(${state.hue}, 100%, 50%)`;
+            ctx.fillRect(0, 0, w, h);
+            // white -> transparent gradient (left -> right)
+            const whiteGrad = ctx.createLinearGradient(0, 0, w, 0);
+            whiteGrad.addColorStop(0, "rgba(255,255,255,1)");
+            whiteGrad.addColorStop(1, "rgba(255,255,255,0)");
+            ctx.fillStyle = whiteGrad;
+            ctx.fillRect(0, 0, w, h);
+            // transparent -> black gradient (top -> bottom)
+            const blackGrad = ctx.createLinearGradient(0, 0, 0, h);
+            blackGrad.addColorStop(0, "rgba(0,0,0,0)");
+            blackGrad.addColorStop(1, "rgba(0,0,0,1)");
+            ctx.fillStyle = blackGrad;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        /* ---------- Draw pointer on canvas ---------- */
+        function drawPointer() {
+            // If no pick position, set to default based on sat/val
+            const rect = satCanvas.getBoundingClientRect();
+            const w = rect.width, h = rect.height;
+            if (state.pickX === null || state.pickY === null) {
+                state.pickX = (state.sat / 100) * w;
+                state.pickY = (1 - state.val / 100) * h;
+            }
+            // draw on top
+            drawSaturation();
+            const x = clamp(state.pickX, 0, w);
+            const y = clamp(state.pickY, 0, h);
+
+            // outer ring
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ffffff";
+            ctx.fillStyle = "rgba(0,0,0,0)";
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // inner small circle to be crisp
+            ctx.beginPath();
+            ctx.fillStyle = "#000";
+            ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        /* ---------- Update UI values ---------- */
+        function updateUI() {
+            const [r, g, b] = hsvToRgb(state.hue, state.sat, state.val);
+            const hex = rgbToHex([r, g, b]);
+            hexInput.value = hex.toUpperCase();
+            preview.style.background = hex;
+            rgbVal.textContent = `${r}, ${g}, ${b}`;
+            const [c, m, y, k] = rgbToCmyk(r, g, b);
+            cmykVal.textContent = `${c}%, ${m}%, ${y}%, ${k}%`;
+            hsvVal.textContent = `${Math.round(state.hue)}°, ${Math.round(state.sat)}%, ${Math.round(state.val)}%`;
+            const [hh, ss, ll] = rgbToHsl(r, g, b);
+            hslVal.textContent = `${hh}°, ${ss}%, ${ll}%`;
+
+            // move hue indicator position
+            positionHueIndicator();
+
+            // redraw pointer (so canvas has updated background)
+            drawPointer();
+        }
+
+        /* ---------- Map pointer location to HSV ---------- */
+        function setSatValFromCoords(clientX, clientY) {
+            const rect = satCanvas.getBoundingClientRect();
+            const x = clamp(clientX - rect.left, 0, rect.width);
+            const y = clamp(clientY - rect.top, 0, rect.height);
+            state.pickX = x;
+            state.pickY = y;
+            state.sat = Math.round((x / rect.width) * 100);
+            state.val = Math.round((1 - y / rect.height) * 100);
+            updateUI();
+        }
+
+        function setHueFromCoords(clientX, clientY) {
+            const rect = hueBar.getBoundingClientRect();
+            // compute percent from top (0 top -> hue max)
+            const y = clamp(clientY - rect.top, 0, rect.height);
+            const pct = 1 - (y / rect.height); // top -> 1
+            state.hue = Math.round(pct * 360) % 360;
+            updateUI();
+        }
+
+        /* ---------- Hue indicator placement ---------- */
+        function positionHueIndicator() {
+            const rect = hueBar.getBoundingClientRect();
+            // calculate top (for vertical bar)
+            const pct = 1 - (state.hue / 360);
+            const top = clamp(pct * rect.height, 0, rect.height);
+            // set translateY center
+            hueInd.style.top = top + 'px';
+            // also change its background to match the selected hue
+            const [r, g, b] = hsvToRgb(state.hue, 100, 50);
+            hueInd.style.background = `rgb(${r},${g},${b})`;
+        }
+
+        /* ---------- Pointer events (pointer API for mouse/touch) ---------- */
+        let pickingSat = false, pickingHue = false;
+
+        satCanvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            satCanvas.setPointerCapture(e.pointerId);
+            pickingSat = true;
+            setSatValFromCoords(e.clientX, e.clientY);
+        });
+        satCanvas.addEventListener('pointermove', (e) => {
+            if (!pickingSat) return;
+            setSatValFromCoords(e.clientX, e.clientY);
+        });
+        satCanvas.addEventListener('pointerup', (e) => {
+            pickingSat = false;
+            try { satCanvas.releasePointerCapture(e.pointerId); } catch (_) { }
+        });
+
+        hueBar.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            hueBar.setPointerCapture(e.pointerId);
+            pickingHue = true;
+            setHueFromCoords(e.clientX, e.clientY);
+        });
+        hueBar.addEventListener('pointermove', (e) => {
+            if (!pickingHue) return;
+            setHueFromCoords(e.clientX, e.clientY);
+        });
+        hueBar.addEventListener('pointerup', (e) => {
+            pickingHue = false;
+            try { hueBar.releasePointerCapture(e.pointerId); } catch (_) { }
+        });
+
+        /* ---------- HEX input apply (enter or blur) ---------- */
+        hexInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') applyHexInput();
+        });
+        hexInput.addEventListener('blur', applyHexInput);
+
+        function applyHexInput() {
+            const v = hexInput.value.trim();
+            const rgb = hexToRgb(v);
+            if (!rgb) {
+                // invalid -> restore current hex
+                const [r, g, b] = hsvToRgb(state.hue, state.sat, state.val);
+                hexInput.value = rgbToHex([r, g, b]).toUpperCase();
+                return;
+            }
+            const [r, g, b] = rgb;
+            // convert to hsv and update
+            const [h, s, vv] = rgbToHsv(r, g, b);
+            state.hue = h;
+            state.sat = s;
+            state.val = vv;
+            // set pick coords consistent with sat/val
+            const rect = satCanvas.getBoundingClientRect();
+            state.pickX = (state.sat / 100) * rect.width;
+            state.pickY = (1 - state.val / 100) * rect.height;
+            updateUI();
+        }
+
+        /* ---------- Copy hex ---------- */
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(hexInput.value);
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => copyBtn.textContent = 'Copy', 1200);
+            } catch (err) {
+                // fallback
+                const tmp = document.createElement('input');
+                document.body.appendChild(tmp);
+                tmp.value = hexInput.value;
+                tmp.select();
+                document.execCommand('copy');
+                document.body.removeChild(tmp);
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => copyBtn.textContent = 'Copy', 1200);
+            }
+        });
+
+        /* ---------- Initial setup ---------- */
+        function init() {
+            resizeCanvas();
+            // initial indicator + UI
+            const rect = satCanvas.getBoundingClientRect();
+            state.pickX = (state.sat / 100) * rect.width;
+            state.pickY = (1 - state.val / 100) * rect.height;
+            positionHueIndicator();
+            updateUI();
+        }
+        init();
+
+        /* ensure a resize run on load */
+        window.addEventListener('load', resizeCanvas);
+    </script>
+</body>
+
+</html>
