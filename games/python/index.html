@@ -4,7 +4,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>In-Browser Python Interpreter (Pyodide)</title>
+    <title>Python Interpreter</title>
+    <link rel="icon" href="https://static.vecteezy.com/system/resources/previews/012/697/295/non_2x/3d-python-programming-language-logo-free-png.png" />
     <style>
         :root {
             --bg: #0f1720;
@@ -169,12 +170,22 @@
             <div class="short">Click <strong>Run</strong> to test your own Python programs!
             </div>
             <label class="small" style="margin-top: 7px;">Editor</label>
-            <textarea id="editor">print("Hello World")
+            <textarea id="editor"># AvC Nuke
 
-for i in range(6):
-    if i > 0:
-    	print(i)
+power = 5 # WARNING: Increasing this value will crash the site
 
+def nuke(n):
+    a=[]
+    for i in range(10):
+        if(n>1):
+            a.append(nuke(n-1))
+        else:
+            a.append(i)
+    return a
+
+print(nuke(power))
+
+# How to melt your computer
 </textarea>
 
             <div id="controls">
